@@ -27,7 +27,7 @@ export const execSdk = async (network: string, contractId: string) => {
     }
 
     console.error("4. Compactando o diretório '${sdkDir}'...");
-    execSync(`zip -r ${zipFile} ${sdkDir}`, { stdio: 'inherit' });
+    execSync(`zip -r ${zipFile} ${sdkDir} >&2`, { stdio: 'inherit' });
     console.error(`✅ Pasta ${sdkDir} zipada.`);
 
     console.error("5. Verificando se o arquivo '${zipFile}' foi criado...");
