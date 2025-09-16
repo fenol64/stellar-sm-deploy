@@ -28,3 +28,11 @@ export const deploy = (
     --alias ${alias} \
     ${params}`
 }
+
+export const sdk = (network: string, contractId: string) => {
+	return `stellar contract bindings typescript \
+    --network ${network} \
+    --id ${contractId} \
+    --output-dir ./sdk \
+    --overwrite`
+}

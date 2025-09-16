@@ -6,7 +6,7 @@ import * as path from "node:path";
 
 import { addTarget, cloneRepository, compileToWasm, deploy, fundAccount } from "./commands.js";
 
-export const exec = async (url: string, account: string, network: string) => {
+export const execDeploy = async (url: string, account: string, network: string) => {
 	try {
 		const cloneCmd = cloneRepository(url);
 		console.log(`Executando: ${cloneCmd}`);
@@ -151,7 +151,7 @@ Note: Mainnet deployments are disabled for security. Only testnet is supported.
 	console.log(`🌐 Rede: ${network}`);
 	console.log('');
 
-	const result = await exec(gitUrl, account, network);
+	const result = await execDeploy(gitUrl, account, network);
 
 	if (result.success) {
 		console.log(`\n🎉 Deploy realizado com sucesso!`);
