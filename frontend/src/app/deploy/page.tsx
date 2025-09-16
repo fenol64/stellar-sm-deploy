@@ -27,32 +27,72 @@ export default function DeployPage() {
     setDeployStatus('deploying')
     setLogs([])
 
-    // Simulate deployment process with logs
-    const deploymentSteps = [
-      'Initializing deployment...',
-      `Cloning ${isTemplate ? 'template' : 'repository'}: ${projectName}`,
-      'Installing dependencies...',
-      'Building Rust project...',
-      'Compiling WASM contract...',
-      'Connecting to Stellar network...',
-      'Deploying smart contract...',
-      'Verifying deployment...',
-      'Deployment completed successfully!'
-    ]
+    try {
+      const response = await fetch('/api/deploy', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+          repo,
+          name: projectName,
+          template: isTemplate,
+          network: 'testnet' // Default to testnet for now
+        })
+      })
 
-    for (let i = 0; i < deploymentSteps.length; i++) {
-      await new Promise(resolve => setTimeout(resolve, 1000 + Math.random() * 1000))
-      setLogs(prev => [...prev, deploymentSteps[i]])
-
-      // Simulate occasional error (10% chance)
-      if (Math.random() < 0.1 && i === 6) {
-        setLogs(prev => [...prev, 'Error: Network timeout. Retrying...'])
-        await new Promise(resolve => setTimeout(resolve, 2000))
-        setLogs(prev => [...prev, 'Retry successful. Continuing deployment...'])
+      if (!response.ok) {
+        const errorData = await response.json()
+        throw new Error(errorData.error || 'Failed to start deployment')
       }
-    }
 
-    setDeployStatus('success')
+      // Handle streaming response
+      const reader = response.body?.getReader()
+      const decoder = new TextDecoder()
+
+      if (!reader) {
+        throw new Error('No response body')
+      }
+
+      while (true) {
+        const { done, value } = await reader.read()
+
+        if (done) break
+
+        const chunk = decoder.decode(value, { stream: true })
+        const lines = chunk.split('\n')
+
+        for (const line of lines) {
+          if (line.startsWith('data: ')) {
+            try {
+              const data = JSON.parse(line.slice(6))
+
+              if (data.type === 'error') {
+                setLogs(prev => [...prev, `❌ ${data.message}`])
+                setDeployStatus('error')
+                return
+              } else if (data.type === 'complete') {
+                setLogs(prev => [...prev, `🎉 ${data.message}`])
+                if (data.contractId) {
+                  setLogs(prev => [...prev, `📄 Contract ID: ${data.contractId}`])
+                }
+                setDeployStatus('success')
+                return
+              } else {
+                setLogs(prev => [...prev, data.message])
+              }
+            } catch (e) {
+              // Skip invalid JSON lines
+            }
+          }
+        }
+      }
+
+    } catch (error) {
+      console.error('Deployment error:', error)
+      setLogs(prev => [...prev, `❌ ${error instanceof Error ? error.message : 'Unknown error'}`])
+      setDeployStatus('error')
+    }
   }
 
   if (!session) {
@@ -142,6 +182,17 @@ export default function DeployPage() {
                   Deploying...
                 </div>
               )}
+              {deployStatus === 'error' && (
+                <button
+                  onClick={handleDeploy}
+                  className="px-6 py-3 bg-red-600 hover:bg-red-700 text-white rounded-lg font-medium transition-colors flex items-center gap-2"
+                >
+                  <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15" />
+                  </svg>
+                  Retry Deployment
+                </button>
+              )}
               {deployStatus === 'success' && (
                 <div className="flex items-center gap-2 text-green-600 dark:text-green-400">
                   <svg className="w-5 h-5" fill="currentColor" viewBox="0 0 20 20">
@@ -154,6 +205,36 @@ export default function DeployPage() {
           </div>
         </div>
 
+        {/* Error Message */}
+        {deployStatus === 'error' && (
+          <div className="mt-6 bg-red-50 dark:bg-red-900/20 border border-red-200 dark:border-red-800 rounded-lg p-4">
+            <div className="flex items-start">
+              <svg className="w-5 h-5 text-red-600 dark:text-red-400 mt-0.5 mr-3" fill="currentColor" viewBox="0 0 20 20">
+                <path fillRule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zM8.707 7.293a1 1 0 00-1.414 1.414L8.586 10l-1.293 1.293a1 1 0 101.414 1.414L10 11.414l1.293 1.293a1 1 0 001.414-1.414L11.414 10l1.293-1.293a1 1 0 00-1.414-1.414L10 8.586 8.707 7.293z" clipRule="evenodd" />
+              </svg>
+              <div className="flex-1">
+                <h3 className="text-sm font-medium text-red-800 dark:text-red-400">
+                  Deployment Failed
+                </h3>
+                <p className="text-sm text-red-700 dark:text-red-300 mt-1">
+                  Check the logs above for details. You can retry the deployment or contact support if the issue persists.
+                </p>
+                <div className="mt-3">
+                  <button
+                    onClick={() => {
+                      setDeployStatus('idle')
+                      setLogs([])
+                    }}
+                    className="text-sm text-red-600 dark:text-red-400 hover:text-red-800 dark:hover:text-red-300 font-medium"
+                  >
+                    Reset and Try Again
+                  </button>
+                </div>
+              </div>
+            </div>
+          </div>
+        )}
+
         {/* Deployment Logs */}
         {logs.length > 0 && (
           <div className="bg-gray-900 rounded-lg p-4">
@@ -164,18 +245,24 @@ export default function DeployPage() {
               <h3 className="text-sm font-medium text-gray-300">Deployment Logs</h3>
             </div>
             <div className="bg-black rounded p-3 font-mono text-sm max-h-64 overflow-y-auto">
-              {logs.map((log, index) => (
-                <div key={index} className="text-green-400 mb-1">
-                  <span className="text-gray-500">[{new Date().toLocaleTimeString()}]</span> {log}
-                </div>
-              ))}
+              {logs.map((log, index) => {
+                const isError = log.includes('❌')
+                const isSuccess = log.includes('✅') || log.includes('🎉')
+                const colorClass = isError ? 'text-red-400' : isSuccess ? 'text-green-400' : 'text-blue-400'
+
+                return (
+                  <div key={index} className={`${colorClass} mb-1`}>
+                    <span className="text-gray-500">[{new Date().toLocaleTimeString()}]</span> {log}
+                  </div>
+                )
+              })}
               {deployStatus === 'deploying' && (
-                <div className="text-green-400 mb-1 flex items-center gap-2">
+                <div className="text-blue-400 mb-1 flex items-center gap-2">
                   <span className="text-gray-500">[{new Date().toLocaleTimeString()}]</span>
                   <div className="flex space-x-1">
-                    <div className="w-1 h-1 bg-green-400 rounded-full animate-bounce"></div>
-                    <div className="w-1 h-1 bg-green-400 rounded-full animate-bounce" style={{animationDelay: '0.1s'}}></div>
-                    <div className="w-1 h-1 bg-green-400 rounded-full animate-bounce" style={{animationDelay: '0.2s'}}></div>
+                    <div className="w-1 h-1 bg-blue-400 rounded-full animate-bounce"></div>
+                    <div className="w-1 h-1 bg-blue-400 rounded-full animate-bounce" style={{animationDelay: '0.1s'}}></div>
+                    <div className="w-1 h-1 bg-blue-400 rounded-full animate-bounce" style={{animationDelay: '0.2s'}}></div>
                   </div>
                 </div>
               )}
