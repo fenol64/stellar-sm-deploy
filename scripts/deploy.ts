@@ -4,7 +4,7 @@ import * as fs from "node:fs";
 
 import * as path from "node:path";
 
-import { addTarget, cloneRepository, compileToWasm, deploy } from "./commands.js";
+import { addTarget, cloneRepository, compileToWasm, deploy, fundAccount } from "./commands.js";
 
 export const exec = async (url: string, account: string, network: string) => {
 	try {
@@ -46,9 +46,42 @@ export const exec = async (url: string, account: string, network: string) => {
 		const wasmFile = path.join(wasmPath, wasmFiles[0]);
 		console.log(`Arquivo WASM gerado: ${wasmFile}`);
 
+		// Fund account on testnet if needed
+		if (network === 'testnet') {
+			try {
+				console.log(`💰 Financiando conta ${account} no testnet...`);
+				const fundCmd = fundAccount(account, network);
+				console.log(`Executando: ${fundCmd}`);
+				execSync(fundCmd, { stdio: "inherit" });
+				console.log(`✅ Conta financiada com sucesso!`);
+			} catch (fundError) {
+				console.log(`⚠️ Aviso: Falha ao financiar conta (pode já estar financiada): ${fundError}`);
+				// Continue even if funding fails - account might already be funded
+			}
+		}
+
 		const deployCmd = deploy(wasmFile, account, network, repositoryName, "");
 		console.log(`Executando: ${deployCmd}`);
-		execSync(deployCmd, { stdio: "inherit" });
+
+		// Capture contract address from deploy output
+		let contractAddress = '';
+		try {
+			const deployOutput = execSync(deployCmd, { encoding: 'utf8' });
+			console.log('Deploy output:', deployOutput);
+
+			// Try to extract contract address from output
+			const addressMatch = deployOutput.match(/Contract deployed successfully with address: ([A-Z0-9]+)/i) ||
+			                    deployOutput.match(/Address: ([A-Z0-9]+)/i) ||
+			                    deployOutput.match(/([A-Z0-9]{56})/); // Standard Stellar contract address format
+
+			if (addressMatch) {
+				contractAddress = addressMatch[1];
+				console.log(`📄 Contract Address: ${contractAddress}`);
+			}
+		} catch (error) {
+			console.error('Failed to capture contract address:', error);
+			throw error;
+		}
 
 		console.log(`✅ Deploy concluído com sucesso para ${repositoryName}!`);
 
@@ -57,6 +90,7 @@ export const exec = async (url: string, account: string, network: string) => {
 			repositoryName,
 			wasmPath: wasmFile,
 			contractAlias: repositoryName,
+			contractAddress: contractAddress || 'N/A'
 		};
 	} catch (error) {
 		console.error(`❌ Erro durante o processo de deploy:`, error);

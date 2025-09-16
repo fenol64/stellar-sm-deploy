@@ -107,6 +107,9 @@ async function deployContract(
 ) {
   let tempDir: string | null = null
   let isControllerClosed = false
+  let contractAddress = ''
+  let deployLogs = ''
+  let buildLogs = ''
 
   const sendLog = (message: string, type: 'info' | 'success' | 'error' = 'info') => {
     if (isControllerClosed) {
@@ -162,10 +165,23 @@ async function deployContract(
     // Handle stdout (deployment logs)
     dockerProcess.stdout.on('data', (data) => {
       const output = data.toString().trim()
+      buildLogs += output + '\n'
+
       if (output) {
         const lines = output.split('\n')
         lines.forEach((line: string) => {
           if (line.trim()) {
+            // Check for contract address
+            const addressMatch = line.match(/Contract deployed successfully with address: ([A-Z0-9]+)/i) ||
+                                line.match(/Address: ([A-Z0-9]+)/i) ||
+                                line.match(/📄 Contract Address: ([A-Z0-9]+)/i) ||
+                                line.match(/([A-Z0-9]{56})/); // Standard Stellar contract address format
+
+            if (addressMatch && !contractAddress) {
+              contractAddress = addressMatch[1];
+              sendLog(`📄 Contract Address: ${contractAddress}`, 'success')
+            }
+
             // Classify stdout output as well
             const lowerLine = line.toLowerCase()
 
@@ -183,6 +199,8 @@ async function deployContract(
 
     dockerProcess.stderr.on('data', (data) => {
       const output = data.toString().trim()
+      deployLogs += output + '\n'
+
       if (output) {
         const lines = output.split('\n')
         lines.forEach((line: string) => {
@@ -262,8 +280,11 @@ async function deployContract(
           // Create deployment record
           const deployment = await prisma.deployment.create({
             data: {
+              contractAddress: contractAddress || null,
               network: network,
               status: 'DEPLOYED',
+              buildLogs: buildLogs || null,
+              deployLogs: deployLogs || null,
               userId: user.id,
               repositoryId: repository.id,
               stellarKeypairId: keypair.id,
@@ -279,6 +300,7 @@ async function deployContract(
               network,
               deploymentId: deployment.id,
               projectName: repository.name,
+              contractAddress: contractAddress || null,
               message: 'Deployment completed successfully!'
             })}\n\n`)
           }

@@ -10,6 +10,10 @@ export const compileToWasm = (params: string, path: string) => {
 	return `cargo build --target wasm32-unknown-unknown --release --manifest-path ${path}/Cargo.toml ${params}`;
 }
 
+export const fundAccount = (account: string, network: string) => {
+	return `stellar account fund ${account} --network ${network}`
+}
+
 export const deploy = (
 	path: string,
 	account: string,
