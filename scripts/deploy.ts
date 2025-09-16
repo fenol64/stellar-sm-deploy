@@ -67,4 +67,65 @@ export const exec = async (url: string, account: string, network: string) => {
 	}
 };
 
-console.log(exec("git@github.com:fenol64/hello-world-stellar.git", "SCSWCWAH3ZOCOLTK375JMOUQ2DPKJOMDAPHGL6RNVQE5D6QNWA2UH67M", "testnet"))
+// CLI interface for Docker container
+const main = async () => {
+	const args = process.argv.slice(2);
+
+	if (args.length === 0 || args.includes('--help') || args.includes('-h')) {
+		console.log(`
+🚀 Stellar Smart Contract Deployer
+
+Usage: tsx deploy.ts <git_url> <account> <network>
+
+Arguments:
+  git_url    Git repository URL containing the Stellar smart contract
+  account    Stellar account ID for deployment
+  network    Network to deploy to (testnet, mainnet)
+
+Examples:
+  tsx deploy.ts https://github.com/user/stellar-contract.git SCSWC...H67M testnet
+  tsx deploy.ts git@github.com:user/stellar-contract.git SCSWC...H67M mainnet
+
+Environment Variables:
+  STELLAR_ACCOUNT - Default account ID if not provided as argument
+  STELLAR_NETWORK - Default network if not provided as argument
+		`);
+		process.exit(0);
+	}
+
+	const gitUrl = args[0] || process.env.GIT_URL;
+	const account = args[1] || process.env.STELLAR_ACCOUNT;
+	const network = args[2] || process.env.STELLAR_NETWORK || 'testnet';
+
+	if (!gitUrl || !account) {
+		console.error('❌ Erro: URL do repositório e conta são obrigatórios');
+		console.error('Use --help para ver as opções disponíveis');
+		process.exit(1);
+	}
+
+	console.log(`🚀 Iniciando deploy do contrato...`);
+	console.log(`📁 Repositório: ${gitUrl}`);
+	console.log(`👤 Conta: ${account}`);
+	console.log(`🌐 Rede: ${network}`);
+	console.log('');
+
+	const result = await exec(gitUrl, account, network);
+
+	if (result.success) {
+		console.log(`\n🎉 Deploy realizado com sucesso!`);
+		console.log(`📦 Contrato: ${result.contractAlias}`);
+		console.log(`📄 WASM: ${result.wasmPath}`);
+		process.exit(0);
+	} else {
+		console.error(`\n💥 Falha no deploy: ${result.error}`);
+		process.exit(1);
+	}
+};
+
+// Run if this file is executed directly
+if (import.meta.url === `file://${process.argv[1]}`) {
+	main().catch((error) => {
+		console.error('❌ Erro inesperado:', error);
+		process.exit(1);
+	});
+}

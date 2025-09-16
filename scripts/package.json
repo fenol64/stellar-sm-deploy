@@ -5,7 +5,7 @@
 	"main": "index.js",
 	"type": "module",
 	"scripts": {
-		"build": "tsup scripts",
+		"build": "tsc -p tsconfig.build.json",
 		"dev": "tsx --watch deploy.ts",
 		"start": "node dist/deploy.js",
 		"deploy": "tsx deploy.ts"
