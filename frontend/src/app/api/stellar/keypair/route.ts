@@ -17,25 +17,18 @@ export async function POST(request: NextRequest) {
     }
 
     const githubId = session.user.id || ''
-    const githubUsername = session.user.name || session.user.email || ''
 
-    // Check if user exists in database, create if not
-    let user = await prisma.user.findUnique({
+    // Find user in database (should exist from login callback)
+    const user = await prisma.user.findUnique({
       where: { githubId },
       include: { stellarKeypairs: true }
     })
 
     if (!user) {
-      user = await prisma.user.create({
-        data: {
-          githubId,
-          githubUsername,
-          email: session.user.email,
-          name: session.user.name,
-          image: session.user.image
-        },
-        include: { stellarKeypairs: true }
-      })
+      return NextResponse.json(
+        { error: 'User not found in database. Please try logging out and back in.' },
+        { status: 404 }
+      )
     }
 
     // Check if user already has a keypair
