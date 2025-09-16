@@ -36,9 +36,10 @@ export async function POST(request: NextRequest) {
       const existingKeypair = user.stellarKeypairs[0]
       return NextResponse.json({
         message: 'Keypair already exists for this GitHub account',
-        publicKey: existingKeypair.publicKey,
+        publicKey: existingKeypair.testnetPublicKey,
         githubUsername: user.githubUsername,
-        createdAt: existingKeypair.createdAt
+        createdAt: existingKeypair.createdAt,
+        testnetFundingUrl: `https://friendbot.stellar.org?addr=${existingKeypair.testnetPublicKey}`
       })
     }
 
@@ -50,8 +51,8 @@ export async function POST(request: NextRequest) {
     // Store the keypair in database
     const stellarKeypair = await prisma.stellarKeypair.create({
       data: {
-        publicKey,
-        secretKey, // TODO: Encrypt this in production
+        testnetPublicKey: publicKey,
+        testnetSecretKey: secretKey, // TODO: Encrypt this in production
         userId: user.id
       }
     })
@@ -59,10 +60,10 @@ export async function POST(request: NextRequest) {
     // Return public information (never return secret key in response)
     return NextResponse.json({
       message: 'Stellar keypair generated successfully',
-      publicKey: stellarKeypair.publicKey,
+      publicKey: stellarKeypair.testnetPublicKey,
       githubUsername: user.githubUsername,
       createdAt: stellarKeypair.createdAt,
-      testnetFundingUrl: `https://friendbot.stellar.org?addr=${stellarKeypair.publicKey}`
+      testnetFundingUrl: `https://friendbot.stellar.org?addr=${stellarKeypair.testnetPublicKey}`
     })
 
   } catch (error) {
@@ -104,10 +105,10 @@ export async function GET(request: NextRequest) {
     const userKeypair = user.stellarKeypairs[0]
 
     return NextResponse.json({
-      publicKey: userKeypair.publicKey,
+      publicKey: userKeypair.testnetPublicKey,
       githubUsername: user.githubUsername,
       createdAt: userKeypair.createdAt,
-      testnetFundingUrl: `https://friendbot.stellar.org?addr=${userKeypair.publicKey}`
+      testnetFundingUrl: `https://friendbot.stellar.org?addr=${userKeypair.testnetPublicKey}`
     })
 
   } catch (error) {
@@ -122,10 +123,10 @@ export async function GET(request: NextRequest) {
 // Helper function to get secret key (for internal use only)
 export async function getUserSecretKey(publicKey: string): Promise<string | null> {
   try {
-    const stellarKeypair = await prisma.stellarKeypair.findUnique({
-      where: { publicKey }
+    const stellarKeypair = await prisma.stellarKeypair.findFirst({
+      where: { testnetPublicKey: publicKey }
     })
-    return stellarKeypair ? stellarKeypair.secretKey : null
+    return stellarKeypair ? stellarKeypair.testnetSecretKey : null
   } catch (error) {
     console.error('Error retrieving secret key:', error)
     return null
@@ -139,7 +140,7 @@ export async function getAllKeypairs() {
       include: { user: true }
     })
     return keypairs.map(kp => ({
-      publicKey: kp.publicKey,
+      publicKey: kp.testnetPublicKey,
       githubUsername: kp.user.githubUsername,
       createdAt: kp.createdAt
     }))
