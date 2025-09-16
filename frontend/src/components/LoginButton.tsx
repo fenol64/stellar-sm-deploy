@@ -8,7 +8,7 @@ export default function LoginButton() {
   if (status === "loading") {
     return (
       <div className="flex items-center justify-center">
-        <div className="animate-spin rounded-full h-8 w-8 border-2 border-transparent border-t-white border-r-white"></div>
+        <div className="animate-spin rounded-full h-8 w-8 border-2 border-transparent border-t-blue-600 border-r-blue-600"></div>
       </div>
     )
   }
@@ -16,19 +16,19 @@ export default function LoginButton() {
   if (session) {
     return (
       <div className="flex items-center gap-4">
-        <div className="flex items-center gap-3 bg-white/5 backdrop-blur-sm border border-white/10 rounded-lg px-3 py-2">
+        <div className="flex items-center gap-3 bg-white/80 backdrop-blur-sm border border-slate-200 rounded-lg px-3 py-2 shadow-sm">
           <img
             src={session.user?.image || "/default-avatar.png"}
             alt="User avatar"
-            className="w-6 h-6 rounded-full ring-1 ring-white/20"
+            className="w-6 h-6 rounded-full ring-1 ring-slate-300"
           />
-          <span className="text-sm font-medium text-white">
+          <span className="text-sm font-medium text-slate-900">
             {session.user?.name || session.user?.email}
           </span>
         </div>
         <button
           onClick={() => signOut()}
-          className="bg-red-500/20 border border-red-500/30 text-red-300 hover:bg-red-500/30 hover:border-red-500/50 hover:text-red-200 backdrop-blur-sm transition-all duration-200 font-medium text-sm h-10 px-4 rounded-lg"
+          className="bg-red-50 border border-red-200 text-red-700 hover:bg-red-100 hover:border-red-300 hover:text-red-800 backdrop-blur-sm transition-all duration-200 font-medium text-sm h-10 px-4 rounded-lg"
         >
           Sign Out
         </button>
@@ -39,10 +39,10 @@ export default function LoginButton() {
   return (
     <button
       onClick={() => signIn("github")}
-      className="bg-white/5 border border-white/10 text-white hover:bg-white/10 hover:border-white/20 backdrop-blur-sm transition-all duration-200 flex items-center justify-center gap-2 font-medium text-sm h-10 px-6 rounded-lg"
+      className="w-full bg-gradient-to-r from-blue-600 to-blue-700 hover:from-blue-700 hover:to-blue-800 border border-blue-500/50 text-white backdrop-blur-sm transition-all duration-200 flex items-center justify-center gap-3 font-semibold text-lg h-14 px-8 rounded-xl shadow-lg hover:shadow-blue-500/25 hover:scale-[1.02] active:scale-[0.98]"
     >
       <svg
-        className="w-5 h-5"
+        className="w-6 h-6"
         fill="currentColor"
         viewBox="0 0 20 20"
         xmlns="http://www.w3.org/2000/svg"
@@ -53,7 +53,7 @@ export default function LoginButton() {
           clipRule="evenodd"
         />
       </svg>
-      Sign in with GitHub
+      Continue with GitHub
     </button>
   )
 }

@@ -1,39 +1,177 @@
 @import "tailwindcss";
 
 :root {
-  --background: #0a0a0a;
-  --foreground: #ffffff;
+  /* Light theme colors based on provided palette */
+  --background: #fdfdfe;
+  --foreground: #1f2937;
+  --card: #ffffff;
+  --card-foreground: #374151;
+  --muted: #f9fafb;
+  --muted-foreground: #6b7280;
+  --border: #e5e7eb;
+  --input: #ffffff;
+  --ring: #3e63dd;
+
+  /* Success colors - #30a46c */
+  --success-50: #fbfefc;
+  --success-100: #f2fcf5;
+  --success-200: #e9f9ee;
+  --success-300: #ddf3e4;
+  --success-400: #ccebd7;
+  --success-500: #b4dfc4;
+  --success-600: #92ceac;
+  --success-700: #5bb98c;
+  --success-800: #30a46c;
+  --success-900: #299764;
+  --success: #30a46c;
+  --success-background: #e9f9ee;
+  --success-border: #ccebd7;
+
+  /* Warning colors - #ffb224 */
+  --warning-50: #fefdfb;
+  --warning-100: #fff9ed;
+  --warning-200: #fff4d5;
+  --warning-300: #ffecbc;
+  --warning-400: #ffe3a2;
+  --warning-500: #ffd386;
+  --warning-600: #f3ba63;
+  --warning-700: #ee9d2b;
+  --warning-800: #ffb224;
+  --warning-900: #ffa01c;
+  --warning: #ffb224;
+  --warning-background: #fff4d5;
+  --warning-border: #ffe3a2;
+
+  /* Error colors - #e5484d */
+  --error-50: #fffcfc;
+  --error-100: #fff8f8;
+  --error-200: #ffefef;
+  --error-300: #ffe5e5;
+  --error-400: #fdd8d8;
+  --error-500: #f9c6c6;
+  --error-600: #f3aeaf;
+  --error-700: #eb9091;
+  --error-800: #e5484d;
+  --error-900: #dc3d43;
+  --error: #e5484d;
+  --error-background: #ffefef;
+  --error-border: #fdd8d8;
+
+  /* Gold colors - #fdda24 */
+  --gold-50: #fdfdf9;
+  --gold-100: #fffce8;
+  --gold-200: #fffbd1;
+  --gold-300: #fff8bb;
+  --gold-400: #fef2a4;
+  --gold-500: #f9e68c;
+  --gold-600: #efd36c;
+  --gold-700: #ebbc00;
+  --gold-800: #fdda24;
+  --gold-900: #f7ce00;
+  --gold: #fdda24;
+  --gold-background: #fffbd1;
+  --gold-border: #fef2a4;
+
+  /* Navy colors - #3e63dd */
+  --navy-50: #fdfdfe;
+  --navy-100: #f8faff;
+  --navy-200: #f0f4ff;
+  --navy-300: #e6edfe;
+  --navy-400: #d9e2fc;
+  --navy-500: #c6d4f9;
+  --navy-600: #aec0f5;
+  --navy-700: #8da4ef;
+  --navy-800: #3e63dd;
+  --navy-900: #3a5ccc;
+  --navy: #3e63dd;
+  --navy-background: #f0f4ff;
+  --navy-border: #d9e2fc;
+
+  /* Teal colors - #05a2c2 */
+  --teal-50: #fafdfe;
+  --teal-100: #f2fcfd;
+  --teal-200: #e7f9fb;
+  --teal-300: #d8f3f6;
+  --teal-400: #c4eaef;
+  --teal-500: #aadee6;
+  --teal-600: #84cdda;
+  --teal-700: #3db9cf;
+  --teal-800: #05a2c2;
+  --teal-900: #0894b3;
+  --teal: #05a2c2;
+  --teal-background: #e7f9fb;
+  --teal-border: #c4eaef;
+
+  /* Mint colors - #70e1c8 */
+  --mint-50: #f9fefd;
+  --mint-100: #effefa;
+  --mint-200: #e1fbf4;
+  --mint-300: #d2f7ed;
+  --mint-400: #c0efe3;
+  --mint-500: #a5e4d4;
+  --mint-600: #7dd4c0;
+  --mint-700: #40c4aa;
+  --mint-800: #70e1c8;
+  --mint-900: #69d9c1;
+  --mint: #70e1c8;
+  --mint-background: #e1fbf4;
+  --mint-border: #c0efe3;
+
+  /* Lime colors - #99d52a */
+  --lime-50: #fcfdfa;
+  --lime-100: #f7fcf0;
+  --lime-200: #eefadc;
+  --lime-300: #e4f7c7;
+  --lime-400: #d7f2b0;
+  --lime-500: #c9e894;
+  --lime-600: #b1d16a;
+  --lime-700: #94ba2c;
+  --lime-800: #99d52a;
+  --lime-900: #93c926;
+  --lime: #99d52a;
+  --lime-background: #eefadc;
+  --lime-border: #d7f2b0;
+
+  /* Pink colors - #d6409f */
+  --pink-50: #fffcfe;
+  --pink-100: #fff7fc;
+  --pink-200: #feeef8;
+  --pink-300: #fce5f3;
+  --pink-400: #f9d8ec;
+  --pink-500: #f3c6e2;
+  --pink-600: #ecadd4;
+  --pink-700: #e38ec3;
+  --pink-800: #d6409f;
+  --pink-900: #d23197;
+  --pink: #d6409f;
+  --pink-background: #feeef8;
+  --pink-border: #f9d8ec;
 }
 
 body {
-  background: linear-gradient(135deg, #1f2937 0%, #111827 50%, #000000 100%);
+  background: linear-gradient(135deg, var(--navy-50) 0%, var(--navy-100) 50%, var(--navy-200) 100%);
   background-attachment: fixed;
   color: var(--foreground);
   font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', 'Roboto', 'Oxygen', 'Ubuntu', 'Cantarell', sans-serif;
   min-height: 100vh;
 }
 
-/* Custom scrollbar for dark theme */
+/* Custom scrollbar for light theme */
 ::-webkit-scrollbar {
   width: 8px;
 }
 
 ::-webkit-scrollbar-track {
-  background: #1f2937;
+  background: var(--navy-100);
 }
 
 ::-webkit-scrollbar-thumb {
-  background: #4b5563;
+  background: var(--navy-400);
   border-radius: 4px;
 }
 
 ::-webkit-scrollbar-thumb:hover {
-  background: #6b7280;
-}
-
-/* Smooth animations */
-* {
-  transition: background-color 0.2s ease, border-color 0.2s ease, color 0.2s ease;
+  background: var(--navy-500);
 }
 
 /* Smooth animations */

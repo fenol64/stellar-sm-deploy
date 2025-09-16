@@ -2,7 +2,7 @@
 
 import { useSession } from "next-auth/react"
 import Link from "next/link"
-import { useEffect, useState } from "react"
+import { useEffect, useState, useCallback } from "react"
 import { useRouter } from "next/navigation"
 
 interface Deployment {
@@ -37,6 +37,31 @@ export default function RepositoriesPage() {
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState('')
 
+  const fetchRepositories = useCallback(async () => {
+    try {
+      const response = await fetch('/api/repositories')
+      if (!response.ok) {
+        throw new Error('Failed to fetch repositories')
+      }
+      const data = await response.json()
+      // API returns { repositories: [...] }
+      const repositoriesArray = data.repositories || data
+      if (Array.isArray(repositoriesArray)) {
+        setRepositories(repositoriesArray)
+      } else {
+        console.error('API returned non-array data:', data)
+        setRepositories([])
+        setError('Invalid data format received from server')
+      }
+    } catch (error) {
+      console.error('Failed to fetch repositories:', error)
+      setError('Failed to load repositories')
+      setRepositories([]) // Ensure repositories is always an array
+    } finally {
+      setLoading(false)
+    }
+  }, [])
+
   useEffect(() => {
     if (!session) {
       router.push('/')
@@ -44,23 +69,7 @@ export default function RepositoriesPage() {
     }
 
     fetchRepositories()
-  }, [session])
-
-  const fetchRepositories = async () => {
-    try {
-      const response = await fetch('/api/repositories')
-      if (!response.ok) {
-        throw new Error('Failed to fetch repositories')
-      }
-      const data = await response.json()
-      setRepositories(data)
-    } catch (error) {
-      console.error('Failed to fetch repositories:', error)
-      setError('Failed to load repositories')
-    } finally {
-      setLoading(false)
-    }
-  }
+  }, [session, router, fetchRepositories])
 
   const handleDeploy = (repo: Repository) => {
     router.push(`/deploy?repo=${encodeURIComponent(repo.cloneUrl)}&name=${encodeURIComponent(repo.name)}`)
@@ -68,11 +77,11 @@ export default function RepositoriesPage() {
 
   const getStatusColor = (status: string) => {
     switch (status) {
-      case 'DEPLOYED': return 'text-green-400 bg-green-400/10'
-      case 'DEPLOY_FAILED': return 'text-red-400 bg-red-400/10'
-      case 'BUILDING': return 'text-yellow-400 bg-yellow-400/10'
-      case 'PENDING': return 'text-blue-400 bg-blue-400/10'
-      default: return 'text-gray-400 bg-gray-400/10'
+      case 'DEPLOYED': return 'text-green-700 bg-green-100'
+      case 'DEPLOY_FAILED': return 'text-red-700 bg-red-100'
+      case 'BUILDING': return 'text-amber-700 bg-amber-100'
+      case 'PENDING': return 'text-blue-700 bg-blue-100'
+      default: return 'text-slate-700 bg-slate-100'
     }
   }
 
@@ -86,35 +95,40 @@ export default function RepositoriesPage() {
 
   if (loading) {
     return (
-      <div className="min-h-screen bg-gradient-to-br from-gray-900 via-gray-800 to-black flex items-center justify-center">
-        <div className="animate-spin rounded-full h-12 w-12 border-2 border-transparent border-t-white border-r-white"></div>
+      <div className="min-h-screen bg-gradient-to-br from-slate-50 via-blue-50 to-indigo-50 flex items-center justify-center">
+        <div className="animate-spin rounded-full h-12 w-12 border-2 border-transparent border-t-blue-600 border-r-blue-600"></div>
       </div>
     )
   }
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-gray-900 via-gray-800 to-black text-white">
-      <header className="border-b border-gray-700/50 backdrop-blur-sm bg-gray-900/50">
+    <div className="min-h-screen bg-gradient-to-br from-slate-50 via-blue-50 to-indigo-50 text-slate-900">
+      <header className="border-b border-blue-200/60 backdrop-blur-sm bg-white/80">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
           <div className="flex justify-between items-center py-4">
             <div className="flex items-center gap-4">
               <Link
                 href="/"
-                className="text-gray-400 hover:text-white transition-colors p-2 rounded-lg hover:bg-gray-800/30"
+                className="text-slate-600 hover:text-slate-900 transition-colors p-2 rounded-lg hover:bg-slate-100/50"
                 title="Back to Home"
               >
                 <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                   <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M10 19l-7-7m0 0l7-7m-7 7h18" />
                 </svg>
               </Link>
-              <h1 className="text-xl font-bold text-white">
+              <img
+                src="/stellar.svg"
+                alt="Stellar"
+                className="h-6 w-auto text-slate-900"
+              />
+              <h1 className="text-xl font-bold text-slate-900">
                 My Repositories
               </h1>
             </div>
             <div className="flex items-center gap-4">
               <Link
                 href="/add"
-                className="px-4 py-2 bg-purple-600 hover:bg-purple-700 text-white rounded-lg text-sm transition-colors flex items-center gap-2"
+                className="px-4 py-2 bg-blue-600 hover:bg-blue-700 text-white rounded-lg text-sm transition-colors flex items-center gap-2"
               >
                 <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                   <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 4v16m8-8H4" />
@@ -123,7 +137,7 @@ export default function RepositoriesPage() {
               </Link>
               <Link
                 href="/settings"
-                className="text-gray-400 hover:text-white transition-colors p-2 rounded-lg hover:bg-gray-800/30"
+                className="text-slate-600 hover:text-slate-900 transition-colors p-2 rounded-lg hover:bg-slate-100/50"
                 title="Settings"
               >
                 <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -139,32 +153,32 @@ export default function RepositoriesPage() {
       <main className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
         {/* Header */}
         <div className="text-center py-8 mb-8">
-          <h2 className="text-4xl font-bold text-white mb-4">
+          <h2 className="text-4xl font-bold text-slate-900 mb-4">
             Your Smart Contract Repositories
           </h2>
-          <p className="text-lg text-gray-400 max-w-2xl mx-auto">
+          <p className="text-lg text-slate-600 max-w-2xl mx-auto">
             Manage and deploy your Stellar smart contracts from your imported repositories.
           </p>
         </div>
 
         {error && (
-          <div className="bg-red-900/20 border border-red-800/50 rounded-lg p-4 mb-6">
-            <p className="text-red-400">{error}</p>
+          <div className="bg-red-50 border border-red-200 rounded-lg p-4 mb-6">
+            <p className="text-red-700">{error}</p>
           </div>
         )}
 
-        {repositories.length === 0 ? (
+        {!loading && Array.isArray(repositories) && repositories.length === 0 ? (
           <div className="text-center py-12">
-            <svg className="w-24 h-24 mx-auto text-gray-500 mb-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <svg className="w-24 h-24 mx-auto text-slate-400 mb-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
               <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 11H5m14 0a2 2 0 012 2v6a2 2 0 01-2 2H5a2 2 0 01-2-2v-6a2 2 0 012-2m14 0V9a2 2 0 00-2-2M5 11V9a2 2 0 012-2m0 0V5a2 2 0 012-2h6a2 2 0 012 2v2M7 7h10" />
             </svg>
-            <h3 className="text-2xl font-semibold text-white mb-4">No repositories yet</h3>
-            <p className="text-gray-400 mb-6">
+            <h3 className="text-2xl font-semibold text-slate-900 mb-4">No repositories yet</h3>
+            <p className="text-slate-600 mb-6">
               Import your first repository to start deploying smart contracts.
             </p>
             <Link
               href="/add"
-              className="inline-flex items-center gap-2 px-6 py-3 bg-purple-600 hover:bg-purple-700 text-white rounded-lg transition-colors"
+              className="inline-flex items-center gap-2 px-6 py-3 bg-blue-600 hover:bg-blue-700 text-white rounded-lg transition-colors"
             >
               <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                 <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 4v16m8-8H4" />
@@ -172,25 +186,27 @@ export default function RepositoriesPage() {
               Import Repository
             </Link>
           </div>
-        ) : (
+        ) : null}
+
+        {!loading && Array.isArray(repositories) && repositories.length > 0 && (
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
             {repositories.map((repo) => (
-              <div key={repo.id} className="bg-gray-800/30 backdrop-blur-sm border border-gray-700/50 rounded-lg p-6 hover:border-gray-600/50 transition-all">
+              <div key={repo.id} className="bg-white/80 backdrop-blur-sm border border-slate-200 rounded-lg p-6 hover:border-slate-300 transition-all">
                 <div className="flex items-start justify-between mb-4">
                   <div className="flex-1">
                     <Link
                       href={`/repositories/${repo.id}`}
-                      className="text-xl font-semibold text-white hover:text-purple-400 transition-colors"
+                      className="text-xl font-semibold text-slate-900 hover:text-blue-600 transition-colors"
                     >
                       {repo.name}
                     </Link>
-                    <p className="text-gray-400 text-sm mt-1 line-clamp-2">
+                    <p className="text-slate-600 text-sm mt-1 line-clamp-2">
                       {repo.description || 'No description available'}
                     </p>
                   </div>
                 </div>
 
-                <div className="flex items-center gap-3 text-sm text-gray-400 mb-4">
+                <div className="flex items-center gap-3 text-sm text-slate-600 mb-4">
                   <span className="flex items-center gap-1">
                     <div className="w-2 h-2 rounded-full bg-orange-500"></div>
                     {repo.language || 'Unknown'}
@@ -207,17 +223,17 @@ export default function RepositoriesPage() {
                 </div>
 
                 {repo.latestDeployment && (
-                  <div className="mb-4 p-3 bg-gray-900/50 rounded-lg">
+                  <div className="mb-4 p-3 bg-slate-50 rounded-lg">
                     <div className="flex items-center justify-between">
                       <span className={`px-2 py-1 rounded-full text-xs font-medium ${getStatusColor(repo.latestDeployment.status)}`}>
                         Latest: {repo.latestDeployment.status}
                       </span>
-                      <span className="text-xs text-gray-400">
+                      <span className="text-xs text-slate-500">
                         {formatDate(repo.latestDeployment.deployedAt || repo.latestDeployment.createdAt)}
                       </span>
                     </div>
                     {repo.latestDeployment.contractAddress && (
-                      <code className="text-xs text-green-400 font-mono mt-2 block truncate">
+                      <code className="text-xs text-green-700 font-mono mt-2 block truncate">
                         {repo.latestDeployment.contractAddress}
                       </code>
                     )}
@@ -227,13 +243,13 @@ export default function RepositoriesPage() {
                 <div className="flex gap-2">
                   <Link
                     href={`/repositories/${repo.id}`}
-                    className="flex-1 px-3 py-2 bg-gray-700 hover:bg-gray-600 text-white rounded text-sm text-center transition-colors"
+                    className="flex-1 px-3 py-2 bg-slate-200 hover:bg-slate-300 text-slate-900 rounded text-sm text-center transition-colors"
                   >
                     View Details
                   </Link>
                   <button
                     onClick={() => handleDeploy(repo)}
-                    className="flex-1 px-3 py-2 bg-purple-600 hover:bg-purple-700 text-white rounded text-sm transition-colors"
+                    className="flex-1 px-3 py-2 bg-blue-600 hover:bg-blue-700 text-white rounded text-sm transition-colors"
                   >
                     Deploy
                   </button>
@@ -241,7 +257,7 @@ export default function RepositoriesPage() {
                     href={repo.htmlUrl}
                     target="_blank"
                     rel="noopener noreferrer"
-                    className="px-3 py-2 bg-blue-600 hover:bg-blue-700 text-white rounded text-sm transition-colors"
+                    className="px-3 py-2 bg-slate-700 hover:bg-slate-800 text-white rounded text-sm transition-colors"
                     title="View on GitHub"
                   >
                     <svg className="w-4 h-4" fill="currentColor" viewBox="0 0 20 20">

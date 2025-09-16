@@ -68,15 +68,15 @@ export default function RecentDeploymentsList() {
     switch (status.toLowerCase()) {
       case 'success':
       case 'completed':
-        return 'text-green-400'
+        return 'text-green-600'
       case 'failed':
       case 'error':
-        return 'text-red-400'
+        return 'text-red-600'
       case 'deploying':
       case 'pending':
-        return 'text-yellow-400'
+        return 'text-yellow-600'
       default:
-        return 'text-gray-400'
+        return 'text-slate-500'
     }
   }
 
@@ -97,12 +97,12 @@ export default function RecentDeploymentsList() {
 
   if (loading) {
     return (
-      <div className="bg-white/10 backdrop-blur-lg rounded-2xl border border-white/20 p-6">
+      <div className="bg-white/80 backdrop-blur-lg rounded-2xl border border-slate-200 p-6 shadow-sm">
         <div className="animate-pulse space-y-4">
-          <div className="h-4 bg-white/20 rounded w-1/3"></div>
+          <div className="h-4 bg-slate-200 rounded w-1/3"></div>
           <div className="space-y-3">
             {[...Array(3)].map((_, i) => (
-              <div key={i} className="h-12 bg-white/10 rounded-lg"></div>
+              <div key={i} className="h-12 bg-slate-100 rounded-lg"></div>
             ))}
           </div>
         </div>
@@ -112,12 +112,12 @@ export default function RecentDeploymentsList() {
 
   if (error) {
     return (
-      <div className="bg-white/10 backdrop-blur-lg rounded-2xl border border-white/20 p-6">
-        <div className="text-center text-red-400">
+      <div className="bg-white/80 backdrop-blur-lg rounded-2xl border border-red-200 p-6 shadow-sm">
+        <div className="text-center text-red-700">
           <p>Error loading deployments: {error}</p>
           <button
             onClick={loadRecentDeployments}
-            className="mt-2 text-sm text-blue-400 hover:text-blue-300"
+            className="mt-2 text-sm text-blue-600 hover:text-blue-700"
           >
             Try again
           </button>
@@ -127,12 +127,12 @@ export default function RecentDeploymentsList() {
   }
 
   return (
-    <div className="bg-white/10 backdrop-blur-lg rounded-2xl border border-white/20 p-6">
+    <div className="bg-white/80 backdrop-blur-lg rounded-2xl border border-slate-200 p-6 shadow-sm">
       <div className="flex items-center justify-between mb-6">
-        <h2 className="text-xl font-semibold text-white">Recent Deployments</h2>
+        <h2 className="text-xl font-semibold text-slate-900">Recent Deployments</h2>
         <Link
           href="/add"
-          className="text-sm text-purple-400 hover:text-purple-300 transition-colors"
+          className="text-sm text-blue-600 hover:text-blue-700 transition-colors"
         >
           Deploy New →
         </Link>
@@ -140,16 +140,16 @@ export default function RecentDeploymentsList() {
 
       {deployments.length === 0 ? (
         <div className="text-center py-8">
-          <div className="w-12 h-12 mx-auto mb-4 bg-gray-700/50 rounded-lg flex items-center justify-center">
-            <svg className="w-6 h-6 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+          <div className="w-12 h-12 mx-auto mb-4 bg-slate-100 rounded-lg flex items-center justify-center">
+            <svg className="w-6 h-6 text-slate-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
               <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" />
             </svg>
           </div>
-          <h3 className="text-lg font-medium text-white mb-2">No deployments yet</h3>
-          <p className="text-gray-400 mb-4">Deploy your first smart contract</p>
+          <h3 className="text-lg font-medium text-slate-900 mb-2">No deployments yet</h3>
+          <p className="text-slate-600 mb-4">Deploy your first smart contract</p>
           <Link
             href="/add"
-            className="inline-flex items-center gap-2 px-4 py-2 bg-purple-600 hover:bg-purple-700 text-white rounded-lg transition-colors"
+            className="inline-flex items-center gap-2 px-4 py-2 bg-blue-600 hover:bg-blue-700 text-white rounded-lg transition-colors"
           >
             <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
               <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 4v16m8-8H4" />
@@ -163,26 +163,26 @@ export default function RecentDeploymentsList() {
             <Link
               key={deployment.id}
               href={`/repositories/${deployment.repository.id}`}
-              className="block bg-white/5 hover:bg-white/10 border border-white/10 hover:border-white/20 rounded-lg p-4 transition-all duration-200 group"
+              className="block bg-white/60 hover:bg-white/80 border border-slate-200 hover:border-slate-300 rounded-lg p-4 transition-all duration-200 group shadow-sm"
             >
               <div className="flex items-start justify-between">
                 <div className="flex items-start gap-3 flex-1">
                   {getStatusIcon(deployment.status)}
                   <div className="flex-1 min-w-0">
                     <div className="flex items-center gap-2 mb-1">
-                      <h3 className="font-medium text-white group-hover:text-purple-300 transition-colors truncate">
+                      <h3 className="font-medium text-slate-900 group-hover:text-blue-700 transition-colors truncate">
                         {deployment.repository.name}
                       </h3>
                       <span className={`text-xs ${getStatusColor(deployment.status)} capitalize`}>
                         {deployment.status}
                       </span>
                     </div>
-                    <p className="text-sm text-gray-400 mb-2">
+                    <p className="text-sm text-slate-600 mb-2">
                       Network: {deployment.network}
                     </p>
                     {deployment.contractAddress && (
                       <div className="flex items-center gap-2">
-                        <code className="text-xs bg-white/10 px-2 py-1 rounded text-green-400 font-mono">
+                        <code className="text-xs bg-slate-100 px-2 py-1 rounded text-green-700 font-mono">
                           {deployment.contractAddress.slice(0, 16)}...
                         </code>
                         <button
@@ -190,7 +190,7 @@ export default function RecentDeploymentsList() {
                             e.preventDefault()
                             navigator.clipboard.writeText(deployment.contractAddress!)
                           }}
-                          className="hover:text-white transition-colors text-gray-400"
+                          className="hover:text-slate-900 transition-colors text-slate-500"
                           title="Copy contract address"
                         >
                           <svg className="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -202,7 +202,7 @@ export default function RecentDeploymentsList() {
                   </div>
                 </div>
                 <div className="text-right">
-                  <div className="text-xs text-gray-500">
+                  <div className="text-xs text-slate-400">
                     {formatTimeAgo(deployment.createdAt)}
                   </div>
                 </div>
