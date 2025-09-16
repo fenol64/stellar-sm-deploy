@@ -278,11 +278,5 @@ async function deployContract(
         message: error instanceof Error ? error.message : String(error)
       })}\n\n`)
     }
-  } finally {
-    // Only close if not already closed
-    if (!isControllerClosed) {
-      isControllerClosed = true
-      controller.close()
-    }
   }
 }
