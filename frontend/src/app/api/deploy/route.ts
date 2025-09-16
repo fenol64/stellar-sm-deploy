@@ -282,16 +282,6 @@ async function deployContract(
       })}\n\n`)
     }
   } finally {
-    // Cleanup temporary directory if not already done
-    if (tempDir) {
-      try {
-        await rm(tempDir, { recursive: true, force: true })
-        sendLog(`🧹 Cleaned up temporary workspace`)
-      } catch (err) {
-        sendLog(`⚠️ Failed to cleanup temp dir: ${err instanceof Error ? err.message : String(err)}`)
-      }
-    }
-
     // Only close if not already closed
     if (!isControllerClosed) {
       isControllerClosed = true
