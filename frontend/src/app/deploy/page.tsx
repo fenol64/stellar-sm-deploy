@@ -86,7 +86,7 @@ export default function DeployPage() {
                   setLogs(prev => [...prev, `📄 Contract ID: ${data.contractId}`])
                 }
                 setDeployStatus('success')
-                
+
                 // Redirect to success page
                 setTimeout(() => {
                   if (data.deploymentId) {
@@ -95,7 +95,7 @@ export default function DeployPage() {
                     router.push(`/deploy/success?name=${encodeURIComponent(projectName)}&network=${encodeURIComponent(data.network || 'testnet')}`)
                   }
                 }, 2000) // Wait 2 seconds to show success message
-                
+
                 reader.releaseLock()
                 return
               } else {

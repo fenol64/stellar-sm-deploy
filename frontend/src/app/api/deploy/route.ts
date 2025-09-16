@@ -229,16 +229,16 @@ async function deployContract(
 
       if (code === 0) {
         sendLog('🎉 Deployment completed successfully!', 'success')
-        
+
         // Save project and deployment to database
         try {
           // Create or update repository record
           const repoName = repoUrl.split('/').pop()?.replace('.git', '') || 'unknown-repo'
-          
+
           let repository = await prisma.repository.findFirst({
-            where: { 
+            where: {
               cloneUrl: repoUrl,
-              userId: user.id 
+              userId: user.id
             }
           })
 
@@ -272,7 +272,7 @@ async function deployContract(
           })
 
           sendLog(`💾 Project and deployment saved with ID: ${deployment.id}`)
-          
+
           if (!isControllerClosed) {
             controller.enqueue(`data: ${JSON.stringify({
               type: 'complete',
@@ -285,7 +285,7 @@ async function deployContract(
         } catch (dbError) {
           console.error('Failed to save deployment to database:', dbError)
           sendLog(`⚠️ Deployment succeeded but failed to save to database: ${dbError instanceof Error ? dbError.message : String(dbError)}`)
-          
+
           if (!isControllerClosed) {
             controller.enqueue(`data: ${JSON.stringify({
               type: 'complete',
