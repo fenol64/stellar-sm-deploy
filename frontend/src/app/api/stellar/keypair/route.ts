@@ -2,15 +2,7 @@ import { NextRequest, NextResponse } from 'next/server'
 import { getServerSession } from 'next-auth'
 import { Keypair } from '@stellar/stellar-sdk'
 import { authOptions } from '../../../../lib/auth'
-
-// In-memory storage for demo purposes - in production, use a proper database
-const userKeypairs = new Map<string, {
-  publicKey: string
-  secretKey: string
-  githubId: string
-  githubUsername: string
-  createdAt: Date
-}>()
+import { prisma } from '../../../../lib/prisma'
 
 export async function POST(request: NextRequest) {
   try {
@@ -24,16 +16,35 @@ export async function POST(request: NextRequest) {
       )
     }
 
-    // Check if user already has a keypair
-    const existingKeypair = Array.from(userKeypairs.values()).find(
-      kp => kp.githubId === session.user?.id || kp.githubUsername === session.user?.name
-    )
+    const githubId = session.user.id || ''
+    const githubUsername = session.user.name || session.user.email || ''
 
-    if (existingKeypair) {
+    // Check if user exists in database, create if not
+    let user = await prisma.user.findUnique({
+      where: { githubId },
+      include: { stellarKeypairs: true }
+    })
+
+    if (!user) {
+      user = await prisma.user.create({
+        data: {
+          githubId,
+          githubUsername,
+          email: session.user.email,
+          name: session.user.name,
+          image: session.user.image
+        },
+        include: { stellarKeypairs: true }
+      })
+    }
+
+    // Check if user already has a keypair
+    if (user.stellarKeypairs.length > 0) {
+      const existingKeypair = user.stellarKeypairs[0]
       return NextResponse.json({
         message: 'Keypair already exists for this GitHub account',
         publicKey: existingKeypair.publicKey,
-        githubUsername: existingKeypair.githubUsername,
+        githubUsername: user.githubUsername,
         createdAt: existingKeypair.createdAt
       })
     }
@@ -43,24 +54,22 @@ export async function POST(request: NextRequest) {
     const publicKey = keypair.publicKey()
     const secretKey = keypair.secret()
 
-    // Store the keypair linked to GitHub account
-    const keypairData = {
-      publicKey,
-      secretKey,
-      githubId: session.user.id || '',
-      githubUsername: session.user.name || session.user.email || '',
-      createdAt: new Date()
-    }
-
-    userKeypairs.set(publicKey, keypairData)
+    // Store the keypair in database
+    const stellarKeypair = await prisma.stellarKeypair.create({
+      data: {
+        publicKey,
+        secretKey, // TODO: Encrypt this in production
+        userId: user.id
+      }
+    })
 
     // Return public information (never return secret key in response)
     return NextResponse.json({
       message: 'Stellar keypair generated successfully',
-      publicKey,
-      githubUsername: keypairData.githubUsername,
-      createdAt: keypairData.createdAt,
-      testnetFundingUrl: `https://friendbot.stellar.org?addr=${publicKey}`
+      publicKey: stellarKeypair.publicKey,
+      githubUsername: user.githubUsername,
+      createdAt: stellarKeypair.createdAt,
+      testnetFundingUrl: `https://friendbot.stellar.org?addr=${stellarKeypair.publicKey}`
     })
 
   } catch (error) {
@@ -84,21 +93,26 @@ export async function GET(request: NextRequest) {
       )
     }
 
-    // Find user's keypair
-    const userKeypair = Array.from(userKeypairs.values()).find(
-      kp => kp.githubId === session.user?.id || kp.githubUsername === session.user?.name
-    )
+    const githubId = session.user.id || ''
 
-    if (!userKeypair) {
+    // Find user and their keypair
+    const user = await prisma.user.findUnique({
+      where: { githubId },
+      include: { stellarKeypairs: true }
+    })
+
+    if (!user || user.stellarKeypairs.length === 0) {
       return NextResponse.json(
         { error: 'No Stellar keypair found for this GitHub account' },
         { status: 404 }
       )
     }
 
+    const userKeypair = user.stellarKeypairs[0]
+
     return NextResponse.json({
       publicKey: userKeypair.publicKey,
-      githubUsername: userKeypair.githubUsername,
+      githubUsername: user.githubUsername,
       createdAt: userKeypair.createdAt,
       testnetFundingUrl: `https://friendbot.stellar.org?addr=${userKeypair.publicKey}`
     })
@@ -113,16 +127,31 @@ export async function GET(request: NextRequest) {
 }
 
 // Helper function to get secret key (for internal use only)
-export function getUserSecretKey(publicKey: string): string | null {
-  const keypair = userKeypairs.get(publicKey)
-  return keypair ? keypair.secretKey : null
+export async function getUserSecretKey(publicKey: string): Promise<string | null> {
+  try {
+    const stellarKeypair = await prisma.stellarKeypair.findUnique({
+      where: { publicKey }
+    })
+    return stellarKeypair ? stellarKeypair.secretKey : null
+  } catch (error) {
+    console.error('Error retrieving secret key:', error)
+    return null
+  }
 }
 
 // Helper function to list all keypairs (for admin purposes)
 export async function getAllKeypairs() {
-  return Array.from(userKeypairs.values()).map(kp => ({
-    publicKey: kp.publicKey,
-    githubUsername: kp.githubUsername,
-    createdAt: kp.createdAt
-  }))
+  try {
+    const keypairs = await prisma.stellarKeypair.findMany({
+      include: { user: true }
+    })
+    return keypairs.map(kp => ({
+      publicKey: kp.publicKey,
+      githubUsername: kp.user.githubUsername,
+      createdAt: kp.createdAt
+    }))
+  } catch (error) {
+    console.error('Error retrieving all keypairs:', error)
+    return []
+  }
 }
