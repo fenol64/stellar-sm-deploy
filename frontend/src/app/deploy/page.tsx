@@ -1,11 +1,11 @@
 "use client"
 
 import { useSearchParams, useRouter } from "next/navigation"
-import { useState, useEffect, useRef } from "react"
+import { useState, useEffect, useRef, Suspense } from "react"
 import { useSession } from "next-auth/react"
 import Link from "next/link"
 
-export default function DeployPage() {
+function DeployPageContent() {
   const { data: session } = useSession()
   const searchParams = useSearchParams()
   const router = useRouter()
@@ -425,5 +425,25 @@ export default function DeployPage() {
         )}
       </main>
     </div>
+  )
+}
+
+// Loading component for Suspense fallback
+function LoadingDeploy() {
+  return (
+    <div className="min-h-screen bg-gradient-to-br from-slate-50 via-blue-50 to-indigo-50 flex items-center justify-center">
+      <div className="text-center">
+        <div className="animate-spin rounded-full h-12 w-12 border-2 border-transparent border-t-blue-600 border-r-blue-600 mx-auto mb-4"></div>
+        <p className="text-slate-600">Loading deployment page...</p>
+      </div>
+    </div>
+  )
+}
+
+export default function DeployPage() {
+  return (
+    <Suspense fallback={<LoadingDeploy />}>
+      <DeployPageContent />
+    </Suspense>
   )
 }
