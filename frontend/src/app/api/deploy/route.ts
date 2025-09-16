@@ -52,10 +52,9 @@ export async function POST(request: NextRequest) {
       )
     }
 
-    // Create a readable stream for deployment logs
+    // SSE streaming response
     const stream = new ReadableStream({
       start(controller) {
-        // Start deployment process
         deployContract(controller, repo, account, secretKey, network, name || 'contract')
           .catch(error => {
             controller.enqueue(`data: ${JSON.stringify({
@@ -67,16 +66,17 @@ export async function POST(request: NextRequest) {
       }
     })
 
+    // Retorne o SSE imediatamente
     return new NextResponse(stream, {
+      status: 200,
       headers: {
-        'Content-Type': 'text/event-stream',
+        'Content-Type': 'text/event-stream; charset=utf-8',
         'Cache-Control': 'no-cache',
         'Connection': 'keep-alive',
         'Access-Control-Allow-Origin': '*',
         'Access-Control-Allow-Headers': 'Cache-Control',
       }
     })
-
   } catch (error) {
     console.error('Error starting deployment:', error)
     return NextResponse.json(
@@ -129,11 +129,10 @@ async function deployContract(
     const dockerArgs = [
       'run',
       '--rm',
-      '-v', `${tempDir}:/workspace`,
-      '-e', `STELLAR_SECRET_KEY=${secretKey}`,
+      //'-v', `${tempDir}:/workspace`,
       'stellar-deployer:latest',
       repoUrl,
-      account,
+      secretKey,
       network
     ]
 
@@ -162,7 +161,7 @@ async function deployContract(
             if (lowerLine.includes('✅') || lowerLine.includes('success') || lowerLine.includes('completed')) {
               sendLog(line.trim(), 'success')
             } else if (lowerLine.includes('❌') || lowerLine.includes('error')) {
-              sendLog(line.trim(), 'error')
+              sendLog(line.trim(), 'info') // Use 'info' to avoid premature termination
             } else {
               sendLog(`📝 ${line.trim()}`, 'info')
             }
@@ -171,14 +170,12 @@ async function deployContract(
       }
     })
 
-    // Handle stderr (info/error logs - many normal outputs go to stderr)
     dockerProcess.stderr.on('data', (data) => {
       const output = data.toString().trim()
       if (output) {
         const lines = output.split('\n')
         lines.forEach(line => {
           if (line.trim()) {
-            // Classify output based on content
             const lowerLine = line.toLowerCase()
 
             // True errors
@@ -187,7 +184,7 @@ async function deployContract(
                 lowerLine.includes('panic') ||
                 lowerLine.includes('no sign with key') ||
                 lowerLine.includes('fatal:')) {
-              sendLog(`❌ ${line.trim()}`, 'error')
+              sendLog(`❌ ${line.trim()}`, 'info')
             }
             // Success indicators
             else if (lowerLine.includes('finished') && lowerLine.includes('release') ||

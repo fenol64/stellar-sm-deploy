@@ -25,58 +25,55 @@ export const authOptions: NextAuthOptions = {
   ],
   callbacks: {
     async signIn({ user, account, profile }) {
-      if (account?.provider === "github" && profile) {
-        try {
-          const githubProfile = profile as GitHubProfile
-          
-          // Check if user exists in database
-          const existingUser = await prisma.user.findUnique({
-            where: { githubId: githubProfile.id.toString() }
-          })
-
-          // If user doesn't exist, create them
-          if (!existingUser) {
-            await prisma.user.create({
-              data: {
-                githubId: githubProfile.id.toString(),
-                githubUsername: githubProfile.login || githubProfile.name || '',
-                name: githubProfile.name,
-                email: githubProfile.email,
-                image: githubProfile.avatar_url
-              }
-            })
-            console.log(`New user created: ${githubProfile.login} (${githubProfile.id})`)
-          } else {
-            // Update user info in case it changed
-            await prisma.user.update({
-              where: { githubId: githubProfile.id.toString() },
-              data: {
-                githubUsername: githubProfile.login || githubProfile.name || existingUser.githubUsername,
-                name: githubProfile.name || existingUser.name,
-                email: githubProfile.email || existingUser.email,
-                image: githubProfile.avatar_url || existingUser.image
-              }
-            })
-            console.log(`User updated: ${githubProfile.login} (${githubProfile.id})`)
-          }
-        } catch (error) {
-          console.error('Error creating/updating user:', error)
-          // Don't block login if database operation fails
-        }
+      if (account?.provider !== "github" || !profile) {
+        return true
       }
-      return true
+
+      try {
+        const githubProfile = profile as GitHubProfile
+        
+        await prisma.user.upsert({
+          where: {
+            githubId: githubProfile.id.toString(),
+          },
+          create: {
+            githubId: githubProfile.id.toString(),
+            githubUsername: githubProfile.login || '',
+            name: githubProfile.name,
+            email: githubProfile.email,
+            image: githubProfile.avatar_url,
+          },
+          update: {
+            githubUsername: githubProfile.login || '',
+            name: githubProfile.name,
+            email: githubProfile.email,
+            image: githubProfile.avatar_url,
+          },
+        })
+        
+        console.log(`User upserted successfully: ${githubProfile.login} (${githubProfile.id})`)
+
+        return true
+
+      } catch (error) {
+        console.error("Error in signIn callback:", error)
+        return false
+      }
     },
+
     async jwt({ token, account, profile }) {
-      // Persist the OAuth access_token and or the user id to the token right after signin
       if (account) {
         token.accessToken = account.access_token
-        token.id = (profile as any)?.id?.toString()
+        if (profile) {
+            token.id = (profile as GitHubProfile).id.toString()
+        }
       }
       return token
     },
+
     async session({ session, token }) {
-      // Send properties to the client, like an access_token and user id from a provider.
       if (session.user) {
+        // Expõe o accessToken e o ID do usuário para o cliente
         session.accessToken = token.accessToken as string
         session.user.id = token.id as string
       }
