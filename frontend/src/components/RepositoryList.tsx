@@ -25,6 +25,7 @@ export default function RepositoryList() {
   const router = useRouter()
 
   useEffect(() => {
+    console.log(session)
     if (session?.accessToken) {
       fetchRepositories()
     }
@@ -206,7 +207,7 @@ export default function RepositoryList() {
                 </div>
                 <button
                   onClick={() => handleDeploy(repo.html_url, repo.name)}
-                  className="bg-gray-700/50 border border-gray-600/50 text-gray-300 hover:bg-gray-700 hover:border-gray-600 hover:text-white backdrop-blur-sm transition-all duration-200 font-medium text-sm h-8 px-3 rounded-md opacity-0 group-hover:opacity-100 flex-shrink-0"
+                  className="bg-gray-700/50 border border-gray-600/50 text-gray-300 hover:bg-gray-700 hover:border-gray-600 hover:text-white backdrop-blur-sm transition-all duration-200 font-medium text-sm h-8 px-3 rounded-md flex-shrink-0"
                 >
                   Import
                 </button>
@@ -217,14 +218,6 @@ export default function RepositoryList() {
       </div>
 
       {/* Import Third-Party Repository */}
-      <div className="border-t border-gray-700/50 pt-4">
-        <button className="w-full text-left text-sm text-gray-400 hover:text-gray-300 transition-colors flex items-center gap-2">
-          <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 6v6m0 0v6m0-6h6m-6 0H6" />
-          </svg>
-          Import Third-Party Git Repository →
-        </button>
-      </div>
     </div>
   )
 }

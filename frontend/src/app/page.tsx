@@ -4,6 +4,7 @@ import { useSession } from "next-auth/react"
 import LoginButton from "../components/LoginButton"
 import RepositoryList from "../components/RepositoryList"
 import TemplateList from "../components/TemplateList"
+import StellarWallet from "../components/StellarWallet"
 
 export default function Home() {
   const { data: session, status } = useSession()
@@ -42,6 +43,11 @@ export default function Home() {
               <p className="text-lg text-gray-400 max-w-2xl mx-auto">
                 To deploy a new Project, import an existing Git Repository or get started with one of our Templates.
               </p>
+            </div>
+
+            {/* Stellar Wallet Section */}
+            <div className="mb-8">
+              <StellarWallet />
             </div>
 
             {/* Two Column Layout */}
