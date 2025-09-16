@@ -29,7 +29,7 @@ export default function Home() {
             </div>
             <div className="flex items-center gap-4">
               {session && (
-                <Link 
+                <Link
                   href="/settings"
                   className="text-gray-400 hover:text-white transition-colors p-2 rounded-lg hover:bg-gray-800/30"
                   title="Settings"
