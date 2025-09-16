@@ -1,0 +1,28 @@
+{
+	"name": "deployer",
+	"version": "1.0.0",
+	"description": "Stellar Smart Contract Automatic Deployer",
+	"main": "index.js",
+	"type": "module",
+	"scripts": {
+		"build": "tsup scripts",
+		"dev": "tsx --watch deploy.ts",
+		"start": "node dist/deploy.js",
+		"deploy": "tsx deploy.ts"
+	},
+	"keywords": [
+		"stellar",
+		"soroban",
+		"smart-contracts",
+		"deployment",
+		"automation"
+	],
+	"author": "",
+	"license": "ISC",
+	"devDependencies": {
+		"@types/node": "^24.5.0",
+		"tsup": "^8.5.0",
+		"tsx": "^4.20.5",
+		"typescript": "^5.9.2"
+	}
+}
