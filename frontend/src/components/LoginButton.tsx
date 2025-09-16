@@ -8,7 +8,7 @@ export default function LoginButton() {
   if (status === "loading") {
     return (
       <div className="flex items-center justify-center">
-        <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-gray-900 dark:border-white"></div>
+        <div className="animate-spin rounded-full h-8 w-8 border-2 border-transparent border-t-white border-r-white"></div>
       </div>
     )
   }
@@ -16,19 +16,19 @@ export default function LoginButton() {
   if (session) {
     return (
       <div className="flex items-center gap-4">
-        <div className="flex items-center gap-2">
+        <div className="flex items-center gap-3 bg-white/5 backdrop-blur-sm border border-white/10 rounded-lg px-3 py-2">
           <img
             src={session.user?.image || "/default-avatar.png"}
             alt="User avatar"
-            className="w-8 h-8 rounded-full"
+            className="w-6 h-6 rounded-full ring-1 ring-white/20"
           />
-          <span className="text-sm font-medium">
+          <span className="text-sm font-medium text-white">
             {session.user?.name || session.user?.email}
           </span>
         </div>
         <button
           onClick={() => signOut()}
-          className="rounded-md border border-solid border-red-600 transition-colors flex items-center justify-center bg-red-600 text-white hover:bg-red-700 font-medium text-sm h-10 px-4"
+          className="bg-red-500/20 border border-red-500/30 text-red-300 hover:bg-red-500/30 hover:border-red-500/50 hover:text-red-200 backdrop-blur-sm transition-all duration-200 font-medium text-sm h-10 px-4 rounded-lg"
         >
           Sign Out
         </button>
@@ -39,7 +39,7 @@ export default function LoginButton() {
   return (
     <button
       onClick={() => signIn("github")}
-      className="rounded-md border border-solid border-gray-800 dark:border-white transition-colors flex items-center justify-center gap-2 hover:bg-gray-100 dark:hover:bg-gray-800 font-medium text-sm h-10 px-4"
+      className="bg-white/5 border border-white/10 text-white hover:bg-white/10 hover:border-white/20 backdrop-blur-sm transition-all duration-200 flex items-center justify-center gap-2 font-medium text-sm h-10 px-6 rounded-lg"
     >
       <svg
         className="w-5 h-5"

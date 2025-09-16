@@ -99,119 +99,132 @@ export default function TemplateList() {
   }
 
   return (
-    <div className="space-y-6">
-      <div className="flex justify-between items-center">
-        <h3 className="text-lg font-semibold text-gray-900 dark:text-white">
-          Smart Contract Templates
-        </h3>
-        <select
-          value={filter}
-          onChange={(e) => setFilter(e.target.value)}
-          className="text-sm border border-gray-300 dark:border-gray-600 rounded-md bg-white dark:bg-gray-700 text-gray-900 dark:text-white px-3 py-1"
-        >
-          <option value="all">All Levels</option>
-          <option value="beginner">Beginner</option>
-          <option value="intermediate">Intermediate</option>
-          <option value="advanced">Advanced</option>
-        </select>
+    <div className="bg-gray-800/30 backdrop-blur-sm border border-gray-700/50 rounded-lg p-6 h-fit">
+      {/* Header */}
+      <div className="mb-6">
+        <div className="flex items-center justify-between">
+          <h3 className="text-lg font-medium text-white">
+            Clone Template
+          </h3>
+          <select
+            value={filter}
+            onChange={(e) => setFilter(e.target.value)}
+            className="bg-gray-800/50 border border-gray-700/50 text-white text-sm rounded-md px-3 py-1 focus:outline-none focus:ring-1 focus:ring-gray-600"
+          >
+            <option value="all">Framework</option>
+            <option value="beginner">Beginner</option>
+            <option value="intermediate">Intermediate</option>
+            <option value="advanced">Advanced</option>
+          </select>
+        </div>
       </div>
 
-      <div className="space-y-4">
-        {filteredTemplates.map((template) => (
-          <div
-            key={template.id}
-            className="bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 rounded-lg p-4 hover:shadow-md transition-shadow cursor-pointer"
-            onClick={() => setSelectedTemplate(selectedTemplate?.id === template.id ? null : template)}
-          >
-            <div className="flex justify-between items-start mb-3">
-              <div className="flex-1">
-                <div className="flex items-center gap-2 mb-1">
-                  <h4 className="font-semibold text-gray-900 dark:text-white">
-                    {template.name}
-                  </h4>
-                  <span className={`inline-flex items-center px-2 py-1 rounded-full text-xs font-medium ${difficultyColors[template.difficulty]}`}>
-                    {template.difficulty}
-                  </span>
-                </div>
-                <p className="text-sm text-gray-600 dark:text-gray-400 mb-2">
-                  {template.description}
-                </p>
-                <div className="flex items-center gap-4 text-xs text-gray-500 dark:text-gray-400">
-                  <span className="flex items-center gap-1">
-                    <div className="w-2 h-2 rounded-full bg-orange-500"></div>
-                    {template.language}
-                  </span>
-                  <span>{template.features.length} features</span>
-                </div>
-              </div>
-              <button
-                onClick={(e) => {
-                  e.stopPropagation()
-                  handleUseTemplate(template)
-                }}
-                className="ml-3 px-3 py-1 bg-blue-600 hover:bg-blue-700 text-white text-xs rounded-md transition-colors flex items-center gap-1"
-              >
-                <svg className="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 6v6m0 0v6m0-6h6m-6 0H6" />
-                </svg>
-                Use Template
-              </button>
-            </div>
-
-            {/* Tags */}
-            <div className="flex flex-wrap gap-1 mb-3">
-              {template.tags.map((tag) => (
-                <span
-                  key={tag}
-                  className="inline-flex items-center px-2 py-0.5 rounded text-xs font-medium bg-gray-100 text-gray-800 dark:bg-gray-700 dark:text-gray-300"
-                >
-                  {tag}
-                </span>
-              ))}
-            </div>
-
-            {/* Expandable Details */}
-            {selectedTemplate?.id === template.id && (
-              <div className="border-t border-gray-200 dark:border-gray-700 pt-3 mt-3">
-                <h5 className="font-medium text-gray-900 dark:text-white mb-2">Features:</h5>
-                <ul className="space-y-1">
-                  {template.features.map((feature, index) => (
-                    <li key={index} className="text-sm text-gray-600 dark:text-gray-400 flex items-center gap-2">
-                      <svg className="w-3 h-3 text-green-500" fill="currentColor" viewBox="0 0 20 20">
-                        <path fillRule="evenodd" d="M16.707 5.293a1 1 0 010 1.414l-8 8a1 1 0 01-1.414 0l-4-4a1 1 0 011.414-1.414L8 12.586l7.293-7.293a1 1 0 011.414 0z" clipRule="evenodd" />
+      {/* Template Grid */}
+      <div className="grid grid-cols-1 gap-4 mb-6">
+        {filteredTemplates.slice(0, 4).map((template) => (
+          <div key={template.id} className="group">
+            <div className="bg-gray-800/20 backdrop-blur-sm border border-gray-700/30 rounded-lg p-4 hover:bg-gray-800/40 hover:border-gray-600/50 transition-all duration-200 cursor-pointer">
+              <div className="flex items-center justify-between">
+                <div className="flex items-center gap-3">
+                  <div className="w-8 h-8 rounded-lg bg-blue-500/20 border border-blue-500/30 flex items-center justify-center">
+                    {template.id === 'hello-world' && (
+                      <svg className="w-4 h-4 text-blue-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M7 8h10M7 12h4m1 8l-4-4H5a2 2 0 01-2-2V6a2 2 0 012-2h14a2 2 0 012 2v8a2 2 0 01-2 2h-3l-4 4z" />
                       </svg>
-                      {feature}
-                    </li>
-                  ))}
-                </ul>
-                <div className="mt-3 pt-3 border-t border-gray-200 dark:border-gray-700">
-                  <a
-                    href={template.repoUrl}
-                    target="_blank"
-                    rel="noopener noreferrer"
-                    className="text-sm text-blue-600 dark:text-blue-400 hover:underline flex items-center gap-1"
-                    onClick={(e) => e.stopPropagation()}
+                    )}
+                    {template.id === 'token-contract' && (
+                      <svg className="w-4 h-4 text-yellow-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 8c-1.657 0-3 .895-3 2s1.343 2 3 2 3 .895 3 2-1.343 2-3 2m0-8c1.11 0 2.08.402 2.599 1M12 8V7m0 1v8m0 0v1m0-1c-1.11 0-2.08-.402-2.599-1M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
+                      </svg>
+                    )}
+                    {template.id === 'liquidity-pool' && (
+                      <svg className="w-4 h-4 text-green-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M13 7h8m0 0v8m0-8l-8 8-4-4-6 6" />
+                      </svg>
+                    )}
+                    {template.id === 'crowdfunding' && (
+                      <svg className="w-4 h-4 text-purple-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M17 20h5v-2a3 3 0 00-5.356-1.857M17 20H7m10 0v-2c0-.656-.126-1.283-.356-1.857M7 20H2v-2a3 3 0 015.356-1.857M7 20v-2c0-.656.126-1.283.356-1.857m0 0a5.002 5.002 0 019.288 0M15 7a3 3 0 11-6 0 3 3 0 016 0zm6 3a2 2 0 11-4 0 2 2 0 014 0zM7 10a2 2 0 11-4 0 2 2 0 014 0z" />
+                      </svg>
+                    )}
+                    {(template.id === 'timelock' || template.id === 'nft-contract') && (
+                      <svg className="w-4 h-4 text-red-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12l2 2 4-4m5.618-4.016A11.955 11.955 0 0112 2.944a11.955 11.955 0 01-8.618 3.04A12.02 12.02 0 003 9c0 5.591 3.824 10.29 9 11.622 5.176-1.332 9-6.03 9-11.622 0-1.042-.133-2.052-.382-3.016z" />
+                      </svg>
+                    )}
+                  </div>
+                  <div>
+                    <h4 className="font-medium text-white text-sm">
+                      {template.name}
+                    </h4>
+                    <div className="flex items-center gap-2 mt-1">
+                      <span className={`text-xs px-2 py-0.5 rounded-full ${template.difficulty === 'Beginner' ? 'bg-green-500/20 text-green-300 border border-green-500/30' : template.difficulty === 'Intermediate' ? 'bg-yellow-500/20 text-yellow-300 border border-yellow-500/30' : 'bg-red-500/20 text-red-300 border border-red-500/30'}`}>
+                        {template.difficulty}
+                      </span>
+                    </div>
+                  </div>
+                </div>
+                <div className="flex items-center gap-2">
+                  <button
+                    onClick={() => setSelectedTemplate(selectedTemplate?.id === template.id ? null : template)}
+                    className="text-gray-400 hover:text-white transition-colors"
                   >
-                    <svg className="w-3 h-3" fill="currentColor" viewBox="0 0 20 20">
-                      <path fillRule="evenodd" d="M10 0C4.477 0 0 4.484 0 10.017c0 4.425 2.865 8.18 6.839 9.504.5.092.682-.217.682-.483 0-.237-.008-.868-.013-1.703-2.782.605-3.369-1.343-3.369-1.343-.454-1.158-1.11-1.466-1.11-1.466-.908-.62.069-.608.069-.608 1.003.07 1.531 1.032 1.531 1.032.892 1.53 2.341 1.088 2.91.832.092-.647.35-1.088.636-1.338-2.22-.253-4.555-1.113-4.555-4.951 0-1.093.39-1.988 1.029-2.688-.103-.253-.446-1.272.098-2.65 0 0 .84-.27 2.75 1.026A9.564 9.564 0 0110 4.844c.85.004 1.705.115 2.504.337 1.909-1.296 2.747-1.027 2.747-1.027.546 1.379.203 2.398.1 2.651.64.7 1.028 1.595 1.028 2.688 0 3.848-2.339 4.695-4.566 4.942.359.31.678.921.678 1.856 0 1.338-.012 2.419-.012 2.747 0 .268.18.58.688.482A10.019 10.019 0 0020 10.017C20 4.484 15.522 0 10 0z" clipRule="evenodd" />
+                    <svg
+                      className={`w-4 h-4 transition-transform duration-200 ${selectedTemplate?.id === template.id ? 'rotate-180' : ''}`}
+                      fill="none"
+                      stroke="currentColor"
+                      viewBox="0 0 24 24"
+                    >
+                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 9l-7 7-7-7" />
                     </svg>
-                    View Source Code
-                  </a>
+                  </button>
+                  <button
+                    onClick={(e) => {
+                      e.stopPropagation()
+                      handleUseTemplate(template)
+                    }}
+                    className="bg-gray-700/50 border border-gray-600/50 text-gray-300 hover:bg-gray-700 hover:border-gray-600 hover:text-white backdrop-blur-sm transition-all duration-200 font-medium text-sm h-8 px-3 rounded-md opacity-0 group-hover:opacity-100"
+                  >
+                    Clone
+                  </button>
                 </div>
               </div>
-            )}
+
+              {/* Expanded Details */}
+              {selectedTemplate?.id === template.id && (
+                <div className="mt-4 pt-4 border-t border-gray-700/30">
+                  <p className="text-sm text-gray-300 mb-3">
+                    {template.description}
+                  </p>
+                  <div className="space-y-2">
+                    {template.features.slice(0, 3).map((feature, index) => (
+                      <div key={index} className="flex items-center gap-2 text-xs text-gray-400">
+                        <svg className="w-3 h-3 text-green-400 flex-shrink-0" fill="currentColor" viewBox="0 0 20 20">
+                          <path fillRule="evenodd" d="M16.707 5.293a1 1 0 010 1.414l-8 8a1 1 0 01-1.414 0l-4-4a1 1 0 011.414-1.414L8 12.586l7.293-7.293a1 1 0 011.414 0z" clipRule="evenodd" />
+                        </svg>
+                        <span>{feature}</span>
+                      </div>
+                    ))}
+                  </div>
+                </div>
+              )}
+            </div>
           </div>
         ))}
       </div>
 
-      {filteredTemplates.length === 0 && (
-        <div className="text-center py-8">
-          <svg className="w-12 h-12 text-gray-400 dark:text-gray-600 mx-auto mb-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9.663 17h4.673M12 3v1m6.364 1.636l-.707.707M21 12h-1M4 12H3m3.343-5.657l-.707-.707m2.828 9.9a5 5 0 117.072 0l-.548.547A3.374 3.374 0 0014 18.469V19a2 2 0 11-4 0v-.531c0-.895-.356-1.754-.988-2.386l-.548-.547z" />
+      {/* Browse All Templates */}
+      <div className="border-t border-gray-700/50 pt-4">
+        <button
+          onClick={() => setSelectedTemplate(null)}
+          className="w-full text-left text-sm text-gray-400 hover:text-gray-300 transition-colors flex items-center gap-2"
+        >
+          <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 6v6m0 0v6m0-6h6m-6 0H6" />
           </svg>
-          <p className="text-gray-500 dark:text-gray-400">No templates found for this difficulty level</p>
-        </div>
-      )}
+          Browse All Templates →
+        </button>
+      </div>
     </div>
   )
 }
