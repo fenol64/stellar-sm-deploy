@@ -172,10 +172,7 @@ async function deployContract(
         lines.forEach((line: string) => {
           if (line.trim()) {
             // Check for contract address
-            const addressMatch = line.match(/Contract deployed successfully with address: ([A-Z0-9]+)/i) ||
-                                line.match(/Address: ([A-Z0-9]+)/i) ||
-                                line.match(/📄 Contract Address: ([A-Z0-9]+)/i) ||
-                                line.match(/([A-Z0-9]{56})/); // Standard Stellar contract address format
+            const addressMatch = line.match(/Deploy output: ([A-Z0-9]+)/i)
 
             if (addressMatch && !contractAddress) {
               contractAddress = addressMatch[1];

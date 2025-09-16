@@ -58,7 +58,7 @@ export default function Home() {
           <div className="space-y-8">
             {/* Hero Section */}
             <div className="text-center py-8">
-              <h2 className="text-3xl font-bold text-slate-900 mb-4">
+              <h2 className="text-3xl font-bold text-gold-600 mb-4">
                 Welcome back, {session.user?.name?.split(' ')[0]}!
               </h2>
               <p className="text-lg text-slate-600 max-w-2xl mx-auto">
@@ -152,7 +152,7 @@ export default function Home() {
                 />
               </div>
 
-              <h2 className="text-5xl font-bold text-slate-900 mb-6">
+              <h2 className="text-5xl font-bold text-gold-600 mb-6">
                 Welcome to Stellar Deploy
               </h2>
               <p className="text-xl text-slate-600 mb-12 leading-relaxed">
