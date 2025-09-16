@@ -22,7 +22,8 @@ export default function StellarKeypairManager() {
   const [keypairs, setKeypairs] = useState<UserKeypairs | null>(null)
   const [loading, setLoading] = useState(false)
   const [error, setError] = useState<string | null>(null)
-  const [activeTab, setActiveTab] = useState<'testnet' | 'mainnet'>('testnet')
+  // Removed mainnet tab - only testnet available
+  const [activeTab, setActiveTab] = useState<'testnet'>('testnet')
   const [showImportForm, setShowImportForm] = useState(false)
   const [importData, setImportData] = useState({ publicKey: '', secretKey: '' })
 
@@ -54,7 +55,7 @@ export default function StellarKeypairManager() {
     }
   }
 
-  const generateKeypair = async (network: 'testnet' | 'mainnet') => {
+  const generateKeypair = async (network: 'testnet') => {
     if (!session) {
       setError('Please login with GitHub first')
       return
@@ -88,7 +89,7 @@ export default function StellarKeypairManager() {
     }
   }
 
-  const importKeypair = async (network: 'testnet' | 'mainnet') => {
+  const importKeypair = async (network: 'testnet') => {
     if (!session) {
       setError('Please login with GitHub first')
       return
@@ -153,31 +154,7 @@ export default function StellarKeypairManager() {
         </div>
       )}
 
-      {/* Network Tabs */}
-      <div className="flex space-x-4 mb-6">
-        <button
-          onClick={() => setActiveTab('testnet')}
-          className={`px-4 py-2 rounded-lg font-medium transition-colors ${
-            activeTab === 'testnet'
-              ? 'bg-purple-600 text-white'
-              : 'bg-white/10 text-white/70 hover:bg-white/20'
-          }`}
-        >
-          Testnet
-        </button>
-        <button
-          onClick={() => setActiveTab('mainnet')}
-          className={`px-4 py-2 rounded-lg font-medium transition-colors ${
-            activeTab === 'mainnet'
-              ? 'bg-purple-600 text-white'
-              : 'bg-white/10 text-white/70 hover:bg-white/20'
-          }`}
-        >
-          Mainnet
-        </button>
-      </div>
-
-      {/* Keypair Display */}
+      {/* Testnet Keypair Section */}
       <div className="space-y-4">
         {loading && (
           <p className="text-white/60">Loading...</p>
@@ -185,129 +162,65 @@ export default function StellarKeypairManager() {
 
         {!loading && keypairs && (
           <div>
-            {activeTab === 'testnet' ? (
-              <div>
-                <h3 className="text-lg font-medium text-white mb-4">Testnet Keypair</h3>
-                {keypairs.testnet ? (
-                  <div className="bg-white/5 rounded-lg p-4 space-y-3">
-                    <div>
-                      <label className="block text-sm font-medium text-white/80 mb-1">
-                        Public Key
-                      </label>
-                      <div className="flex items-center space-x-2">
-                        <input
-                          type="text"
-                          value={keypairs.testnet.publicKey}
-                          readOnly
-                          className="flex-1 bg-white/10 border border-white/20 rounded-lg px-3 py-2 text-white font-mono text-sm"
-                        />
-                        <button
-                          onClick={() => navigator.clipboard.writeText(keypairs.testnet!.publicKey)}
-                          className="px-3 py-2 bg-purple-600 hover:bg-purple-700 text-white rounded-lg text-sm"
-                        >
-                          Copy
-                        </button>
-                      </div>
-                    </div>
-                    <div className="flex space-x-2">
-                      <button
-                        onClick={() => fundTestnetAccount(keypairs.testnet!.publicKey)}
-                        className="px-4 py-2 bg-green-600 hover:bg-green-700 text-white rounded-lg text-sm"
-                      >
-                        Fund Account
-                      </button>
-                      <button
-                        onClick={() => generateKeypair('testnet')}
-                        disabled={loading}
-                        className="px-4 py-2 bg-orange-600 hover:bg-orange-700 text-white rounded-lg text-sm disabled:opacity-50"
-                      >
-                        Regenerate
-                      </button>
-                    </div>
-                  </div>
-                ) : (
-                  <div className="bg-white/5 rounded-lg p-6 text-center">
-                    <p className="text-white/60 mb-4">No testnet keypair found</p>
-                    <div className="flex justify-center space-x-2">
-                      <button
-                        onClick={() => generateKeypair('testnet')}
-                        disabled={loading}
-                        className="px-4 py-2 bg-purple-600 hover:bg-purple-700 text-white rounded-lg disabled:opacity-50"
-                      >
-                        Generate New
-                      </button>
-                      <button
-                        onClick={() => setShowImportForm(true)}
-                        className="px-4 py-2 bg-blue-600 hover:bg-blue-700 text-white rounded-lg"
-                      >
-                        Import Existing
-                      </button>
-                    </div>
-                  </div>
-                )}
-              </div>
-            ) : (
-              <div>
-                <h3 className="text-lg font-medium text-white mb-4">Mainnet Keypair</h3>
-                {keypairs.mainnet ? (
-                  <div className="bg-white/5 rounded-lg p-4 space-y-3">
-                    <div>
-                      <label className="block text-sm font-medium text-white/80 mb-1">
-                        Public Key
-                      </label>
-                      <div className="flex items-center space-x-2">
-                        <input
-                          type="text"
-                          value={keypairs.mainnet.publicKey}
-                          readOnly
-                          className="flex-1 bg-white/10 border border-white/20 rounded-lg px-3 py-2 text-white font-mono text-sm"
-                        />
-                        <button
-                          onClick={() => navigator.clipboard.writeText(keypairs.mainnet!.publicKey)}
-                          className="px-3 py-2 bg-purple-600 hover:bg-purple-700 text-white rounded-lg text-sm"
-                        >
-                          Copy
-                        </button>
-                      </div>
-                    </div>
-                    <div className="bg-yellow-500/20 border border-yellow-500/30 rounded-lg p-3 mb-3">
-                      <p className="text-yellow-200 text-sm">
-                        ⚠️ Warning: This is your mainnet keypair. Handle with extreme care!
-                      </p>
-                    </div>
+            <h3 className="text-lg font-medium text-white mb-4">Stellar Testnet Keypair</h3>
+            <p className="text-sm text-gray-400 mb-4">
+              Testnet is used for development and testing. It uses fake XLM that has no real value.
+            </p>
+            {keypairs.testnet ? (
+              <div className="bg-white/5 rounded-lg p-4 space-y-3">
+                <div>
+                  <label className="block text-sm font-medium text-white/80 mb-1">
+                    Public Key
+                  </label>
+                  <div className="flex items-center space-x-2">
+                    <input
+                      type="text"
+                      value={keypairs.testnet.publicKey}
+                      readOnly
+                      className="flex-1 bg-white/10 border border-white/20 rounded-lg px-3 py-2 text-white font-mono text-sm"
+                    />
                     <button
-                      onClick={() => generateKeypair('mainnet')}
-                      disabled={loading}
-                      className="px-4 py-2 bg-orange-600 hover:bg-orange-700 text-white rounded-lg text-sm disabled:opacity-50"
+                      onClick={() => navigator.clipboard.writeText(keypairs.testnet!.publicKey)}
+                      className="px-3 py-2 bg-purple-600 hover:bg-purple-700 text-white rounded-lg text-sm"
                     >
-                      Regenerate
+                      Copy
                     </button>
                   </div>
-                ) : (
-                  <div className="bg-white/5 rounded-lg p-6 text-center">
-                    <p className="text-white/60 mb-4">No mainnet keypair found</p>
-                    <div className="bg-yellow-500/20 border border-yellow-500/30 rounded-lg p-3 mb-4">
-                      <p className="text-yellow-200 text-sm">
-                        ⚠️ Warning: Mainnet keypairs handle real XLM. Be extremely careful!
-                      </p>
-                    </div>
-                    <div className="flex justify-center space-x-2">
-                      <button
-                        onClick={() => generateKeypair('mainnet')}
-                        disabled={loading}
-                        className="px-4 py-2 bg-purple-600 hover:bg-purple-700 text-white rounded-lg disabled:opacity-50"
-                      >
-                        Generate New
-                      </button>
-                      <button
-                        onClick={() => setShowImportForm(true)}
-                        className="px-4 py-2 bg-blue-600 hover:bg-blue-700 text-white rounded-lg"
-                      >
-                        Import Existing
-                      </button>
-                    </div>
-                  </div>
-                )}
+                </div>
+                <div className="flex space-x-2">
+                  <button
+                    onClick={() => fundTestnetAccount(keypairs.testnet!.publicKey)}
+                    className="px-4 py-2 bg-green-600 hover:bg-green-700 text-white rounded-lg text-sm"
+                  >
+                    Fund Account
+                  </button>
+                  <button
+                    onClick={() => generateKeypair('testnet')}
+                    disabled={loading}
+                    className="px-4 py-2 bg-orange-600 hover:bg-orange-700 text-white rounded-lg text-sm disabled:opacity-50"
+                  >
+                    Regenerate
+                  </button>
+                </div>
+              </div>
+            ) : (
+              <div className="bg-white/5 rounded-lg p-6 text-center">
+                <p className="text-white/60 mb-4">No testnet keypair found</p>
+                <div className="flex justify-center space-x-2">
+                  <button
+                    onClick={() => generateKeypair('testnet')}
+                    disabled={loading}
+                    className="px-4 py-2 bg-purple-600 hover:bg-purple-700 text-white rounded-lg disabled:opacity-50"
+                  >
+                    Generate New
+                  </button>
+                  <button
+                    onClick={() => setShowImportForm(true)}
+                    className="px-4 py-2 bg-blue-600 hover:bg-blue-700 text-white rounded-lg"
+                  >
+                    Import Existing
+                  </button>
+                </div>
               </div>
             )}
           </div>
@@ -319,16 +232,14 @@ export default function StellarKeypairManager() {
         <div className="fixed inset-0 bg-black/50 flex items-center justify-center p-4 z-50">
           <div className="bg-slate-800 rounded-2xl border border-white/20 p-6 w-full max-w-md">
             <h3 className="text-xl font-semibold text-white mb-4">
-              Import {activeTab} Keypair
+              Import Testnet Keypair
             </h3>
 
-            {activeTab === 'mainnet' && (
-              <div className="bg-red-500/20 border border-red-500/30 rounded-lg p-3 mb-4">
-                <p className="text-red-200 text-sm">
-                  ⚠️ You are importing a mainnet keypair that handles real XLM!
-                </p>
-              </div>
-            )}
+            <div className="bg-blue-500/20 border border-blue-500/30 rounded-lg p-3 mb-4">
+              <p className="text-blue-200 text-sm">
+                ℹ️ You are importing a testnet keypair for development and testing.
+              </p>
+            </div>
 
             <div className="space-y-4">
               <div>
@@ -359,7 +270,7 @@ export default function StellarKeypairManager() {
 
             <div className="flex space-x-2 mt-6">
               <button
-                onClick={() => importKeypair(activeTab)}
+                onClick={() => importKeypair('testnet')}
                 disabled={loading || !importData.publicKey || !importData.secretKey}
                 className="flex-1 px-4 py-2 bg-purple-600 hover:bg-purple-700 text-white rounded-lg disabled:opacity-50"
               >

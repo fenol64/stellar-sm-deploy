@@ -80,15 +80,16 @@ Usage: tsx deploy.ts <git_url> <account> <network>
 Arguments:
   git_url    Git repository URL containing the Stellar smart contract
   account    Stellar account ID for deployment
-  network    Network to deploy to (testnet, mainnet)
+  network    Network to deploy to (testnet only)
 
 Examples:
   tsx deploy.ts https://github.com/user/stellar-contract.git SCSWC...H67M testnet
-  tsx deploy.ts git@github.com:user/stellar-contract.git SCSWC...H67M mainnet
 
 Environment Variables:
   STELLAR_ACCOUNT - Default account ID if not provided as argument
-  STELLAR_NETWORK - Default network if not provided as argument
+  STELLAR_NETWORK - Default network if not provided as argument (defaults to testnet)
+
+Note: Mainnet deployments are disabled for security. Only testnet is supported.
 		`);
 		process.exit(0);
 	}
@@ -96,6 +97,13 @@ Environment Variables:
 	const gitUrl = args[0] || process.env.GIT_URL;
 	const account = args[1] || process.env.STELLAR_ACCOUNT;
 	const network = args[2] || process.env.STELLAR_NETWORK || 'testnet';
+
+	// Force testnet for security
+	if (network !== 'testnet') {
+		console.error('❌ Erro: Apenas deployments para testnet são suportados');
+		console.error('⚠️ Deployments para mainnet foram desabilitados por segurança');
+		process.exit(1);
+	}
 
 	if (!gitUrl || !account) {
 		console.error('❌ Erro: URL do repositório e conta são obrigatórios');

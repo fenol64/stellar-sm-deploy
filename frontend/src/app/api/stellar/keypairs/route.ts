@@ -38,10 +38,7 @@ export async function GET(request: NextRequest) {
         funded: keypair.testnetFunded,
         testnetFundingUrl: `https://friendbot.stellar.org?addr=${keypair.testnetPublicKey}`
       } : null,
-      mainnet: keypair.mainnetPublicKey ? {
-        publicKey: keypair.mainnetPublicKey,
-        funded: keypair.mainnetFunded
-      } : null,
+      mainnet: null, // Mainnet disabled
       githubUsername: user.githubUsername,
       createdAt: keypair.createdAt,
       updatedAt: keypair.updatedAt
@@ -69,9 +66,9 @@ export async function POST(request: NextRequest) {
 
     const { network, action, publicKey, secretKey } = await request.json()
 
-    if (!network || !['testnet', 'mainnet'].includes(network)) {
+    if (!network || network !== 'testnet') {
       return NextResponse.json(
-        { error: 'Invalid network. Must be testnet or mainnet' },
+        { error: 'Invalid network. Only testnet is supported' },
         { status: 400 }
       )
     }
@@ -139,15 +136,11 @@ export async function POST(request: NextRequest) {
       )
     }
 
-    // Update or create stellar keypair
-    const updateData = network === 'testnet' ? {
+    // Update or create stellar keypair (testnet only)
+    const updateData = {
       testnetPublicKey: newPublicKey,
       testnetSecretKey: newSecretKey,
       testnetFunded: false
-    } : {
-      mainnetPublicKey: newPublicKey,
-      mainnetSecretKey: newSecretKey,
-      mainnetFunded: false
     }
 
     let stellarKeypair

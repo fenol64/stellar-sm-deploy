@@ -52,7 +52,9 @@ docker run --rm -it \
 
 1. **git_url**: URL do repositório Git contendo o smart contract
 2. **account**: ID da conta Stellar para deploy
-3. **network**: Rede de destino (testnet, mainnet)
+3. **network**: Rede de destino (apenas testnet suportado)
+
+⚠️ **Nota Importante**: Por segurança, apenas deployments para testnet são suportados. Deployments para mainnet foram desabilitados.
 
 ## 🎯 Exemplo completo
 

@@ -1,6 +1,6 @@
 "use client"
 
-import { useSearchParams } from "next/navigation"
+import { useSearchParams, useRouter } from "next/navigation"
 import { useState, useEffect } from "react"
 import { useSession } from "next-auth/react"
 import Link from "next/link"
@@ -8,6 +8,7 @@ import Link from "next/link"
 export default function DeployPage() {
   const { data: session } = useSession()
   const searchParams = useSearchParams()
+  const router = useRouter()
   const [deployStatus, setDeployStatus] = useState<'idle' | 'deploying' | 'success' | 'error'>('idle')
   const [logs, setLogs] = useState<string[]>([])
 
@@ -38,7 +39,7 @@ export default function DeployPage() {
           repo,
           name: projectName,
           template: isTemplate,
-          network: 'testnet' // Default to testnet for now
+          network: 'testnet' // Always use testnet
         })
       })
 
@@ -85,6 +86,16 @@ export default function DeployPage() {
                   setLogs(prev => [...prev, `📄 Contract ID: ${data.contractId}`])
                 }
                 setDeployStatus('success')
+                
+                // Redirect to success page
+                setTimeout(() => {
+                  if (data.deploymentId) {
+                    router.push(`/deploy/success?id=${data.deploymentId}`)
+                  } else {
+                    router.push(`/deploy/success?name=${encodeURIComponent(projectName)}&network=${encodeURIComponent(data.network || 'testnet')}`)
+                  }
+                }, 2000) // Wait 2 seconds to show success message
+                
                 reader.releaseLock()
                 return
               } else {

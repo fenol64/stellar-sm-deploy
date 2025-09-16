@@ -145,9 +145,11 @@ export default function AddProjectPage() {
                 <div>
                   <p className="font-medium text-white mb-1">Supported Networks:</p>
                   <ul className="list-disc list-inside space-y-1">
-                    <li>Testnet (recommended for testing)</li>
-                    <li>Mainnet (production deployments)</li>
+                    <li>Testnet (for development and testing)</li>
                   </ul>
+                  <p className="text-sm text-gray-400 mt-2">
+                    All deployments use the Stellar testnet for safe testing with fake XLM.
+                  </p>
                 </div>
               </div>
             </div>

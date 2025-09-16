@@ -27,6 +27,14 @@ export async function POST(request: NextRequest) {
       )
     }
 
+    // Force testnet for security
+    if (network !== 'testnet') {
+      return NextResponse.json(
+        { error: 'Only testnet deployments are supported' },
+        { status: 400 }
+      )
+    }
+
     // Get user's Stellar keypair
     const githubId = session.user.id || ''
     const user = await prisma.user.findUnique({
@@ -42,12 +50,13 @@ export async function POST(request: NextRequest) {
     }
 
     const keypair = user.stellarKeypairs[0]
-    const account = network === 'testnet' ? keypair.testnetPublicKey : keypair.mainnetPublicKey
-    const secretKey = network === 'testnet' ? keypair.testnetSecretKey : keypair.mainnetSecretKey
+    // Only use testnet keypair
+    const account = keypair.testnetPublicKey
+    const secretKey = keypair.testnetSecretKey
 
     if (!account || !secretKey) {
       return NextResponse.json(
-        { error: `No ${network} keypair found. Please generate a ${network} keypair first.` },
+        { error: 'No testnet keypair found. Please generate a testnet keypair first.' },
         { status: 400 }
       )
     }
@@ -55,7 +64,7 @@ export async function POST(request: NextRequest) {
     // SSE streaming response
     const stream = new ReadableStream({
       start(controller) {
-        deployContract(controller, repo, account, secretKey, network, name || 'contract')
+        deployContract(controller, repo, account, secretKey, network, name || 'contract', user, keypair)
           .catch(error => {
             controller.enqueue(`data: ${JSON.stringify({
               type: 'error',
@@ -92,7 +101,9 @@ async function deployContract(
   account: string,
   secretKey: string,
   network: string,
-  contractName: string
+  contractName: string,
+  user: any,
+  keypair: any
 ) {
   let tempDir: string | null = null
   let isControllerClosed = false
@@ -153,7 +164,7 @@ async function deployContract(
       const output = data.toString().trim()
       if (output) {
         const lines = output.split('\n')
-        lines.forEach(line => {
+        lines.forEach((line: string) => {
           if (line.trim()) {
             // Classify stdout output as well
             const lowerLine = line.toLowerCase()
@@ -174,7 +185,7 @@ async function deployContract(
       const output = data.toString().trim()
       if (output) {
         const lines = output.split('\n')
-        lines.forEach(line => {
+        lines.forEach((line: string) => {
           if (line.trim()) {
             const lowerLine = line.toLowerCase()
 
@@ -218,12 +229,70 @@ async function deployContract(
 
       if (code === 0) {
         sendLog('🎉 Deployment completed successfully!', 'success')
-        if (!isControllerClosed) {
-          controller.enqueue(`data: ${JSON.stringify({
-            type: 'complete',
-            network,
-            message: 'Deployment completed successfully!'
-          })}\n\n`)
+        
+        // Save project and deployment to database
+        try {
+          // Create or update repository record
+          const repoName = repoUrl.split('/').pop()?.replace('.git', '') || 'unknown-repo'
+          
+          let repository = await prisma.repository.findFirst({
+            where: { 
+              cloneUrl: repoUrl,
+              userId: user.id 
+            }
+          })
+
+          if (!repository) {
+            repository = await prisma.repository.create({
+              data: {
+                githubId: Math.floor(Math.random() * 1000000), // Temporary ID
+                name: repoName,
+                fullName: repoName,
+                description: `Smart contract from ${repoUrl}`,
+                htmlUrl: repoUrl,
+                cloneUrl: repoUrl,
+                language: 'Rust',
+                private: false,
+                stargazers: 0,
+                userId: user.id
+              }
+            })
+          }
+
+          // Create deployment record
+          const deployment = await prisma.deployment.create({
+            data: {
+              network: network,
+              status: 'DEPLOYED',
+              userId: user.id,
+              repositoryId: repository.id,
+              stellarKeypairId: keypair.id,
+              deployedAt: new Date()
+            }
+          })
+
+          sendLog(`💾 Project and deployment saved with ID: ${deployment.id}`)
+          
+          if (!isControllerClosed) {
+            controller.enqueue(`data: ${JSON.stringify({
+              type: 'complete',
+              network,
+              deploymentId: deployment.id,
+              projectName: repository.name,
+              message: 'Deployment completed successfully!'
+            })}\n\n`)
+          }
+        } catch (dbError) {
+          console.error('Failed to save deployment to database:', dbError)
+          sendLog(`⚠️ Deployment succeeded but failed to save to database: ${dbError instanceof Error ? dbError.message : String(dbError)}`)
+          
+          if (!isControllerClosed) {
+            controller.enqueue(`data: ${JSON.stringify({
+              type: 'complete',
+              network,
+              message: 'Deployment completed successfully!'
+            })}\n\n`)
+          }
         }
       } else {
         sendLog(`❌ Deployment failed with exit code: ${code}`, 'error')

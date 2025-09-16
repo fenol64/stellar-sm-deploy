@@ -106,9 +106,11 @@ export default function SettingsPage() {
                       Default Network
                     </label>
                     <select className="w-full bg-gray-800/50 border border-gray-700/50 text-white rounded-lg px-3 py-2 focus:outline-none focus:ring-1 focus:ring-gray-600">
-                      <option value="testnet">Testnet (Recommended for development)</option>
-                      <option value="mainnet">Mainnet (Production)</option>
+                      <option value="testnet">Testnet (Development and Testing)</option>
                     </select>
+                    <p className="text-xs text-gray-400 mt-1">
+                      Mainnet deployments are currently disabled for safety.
+                    </p>
                   </div>
                   <div>
                     <label className="block text-sm font-medium text-gray-300 mb-2">
