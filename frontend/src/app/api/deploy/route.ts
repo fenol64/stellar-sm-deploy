@@ -2,7 +2,7 @@ import { NextRequest, NextResponse } from 'next/server'
 import { getServerSession } from 'next-auth'
 import { authOptions } from '../../../lib/auth'
 import { prisma } from '../../../lib/prisma'
-import { execSync } from 'child_process'
+import { spawn } from 'child_process'
 import { mkdtemp, rm } from 'fs/promises'
 import { join } from 'path'
 import { tmpdir } from 'os'
@@ -95,13 +95,24 @@ async function deployContract(
   contractName: string
 ) {
   let tempDir: string | null = null
+  let isControllerClosed = false
 
   const sendLog = (message: string, type: 'info' | 'success' | 'error' = 'info') => {
-    controller.enqueue(`data: ${JSON.stringify({
-      type,
-      message,
-      timestamp: new Date().toISOString()
-    })}\n\n`)
+    if (isControllerClosed) {
+      console.log(`[${type}] ${message}`) // Log to console if controller is closed
+      return
+    }
+
+    try {
+      controller.enqueue(`data: ${JSON.stringify({
+        type,
+        message,
+        timestamp: new Date().toISOString()
+      })}\n\n`)
+    } catch (error) {
+      isControllerClosed = true
+      console.log(`[${type}] ${message}`) // Fallback to console
+    }
   }
 
   try {
@@ -132,69 +143,146 @@ async function deployContract(
     sendLog(`Command: ${dockerCommand}`)
     sendLog('🚀 Starting Docker container...')
 
-    try {
-      // Execute Docker command synchronously and capture output
-      const output = execSync(dockerCommand, {
-        encoding: 'utf8',
-        stdio: ['pipe', 'pipe', 'pipe'],
-        maxBuffer: 1024 * 1024 * 10, // 10MB buffer
-        timeout: 300000, // 5 minutes timeout
-        env: {
-          ...process.env,
-          STELLAR_SECRET_KEY: secretKey
-        }
-      })
+    const dockerProcess = spawn('docker', dockerArgs, {
+      stdio: ['pipe', 'pipe', 'pipe']
+    })
 
-      // Process the output line by line
-      const lines = output.split('\n')
-      lines.forEach(line => {
-        if (line.trim()) {
-          sendLog(line.trim())
-        }
-      })
+    let processCompleted = false
 
-      sendLog('🎉 Deployment completed successfully!', 'success')
-      controller.enqueue(`data: ${JSON.stringify({
-        type: 'complete',
-        network,
-        message: 'Deployment completed successfully!'
-      })}\n\n`)
-
-    } catch (error: any) {
-      // Handle execution errors
-      if (error.stdout) {
-        const lines = error.stdout.split('\n')
-        lines.forEach((line: string) => {
+    // Handle stdout (deployment logs)
+    dockerProcess.stdout.on('data', (data) => {
+      const output = data.toString().trim()
+      if (output) {
+        const lines = output.split('\n')
+        lines.forEach(line => {
           if (line.trim()) {
-            sendLog(line.trim())
+            // Classify stdout output as well
+            const lowerLine = line.toLowerCase()
+
+            if (lowerLine.includes('✅') || lowerLine.includes('success') || lowerLine.includes('completed')) {
+              sendLog(line.trim(), 'success')
+            } else if (lowerLine.includes('❌') || lowerLine.includes('error')) {
+              sendLog(line.trim(), 'error')
+            } else {
+              sendLog(`📝 ${line.trim()}`, 'info')
+            }
           }
         })
       }
+    })
 
-      if (error.stderr) {
-        const lines = error.stderr.split('\n')
-        lines.forEach((line: string) => {
+    // Handle stderr (info/error logs - many normal outputs go to stderr)
+    dockerProcess.stderr.on('data', (data) => {
+      const output = data.toString().trim()
+      if (output) {
+        const lines = output.split('\n')
+        lines.forEach(line => {
           if (line.trim()) {
-            sendLog(`⚠️ ${line.trim()}`, 'error')
+            // Classify output based on content
+            const lowerLine = line.toLowerCase()
+
+            // True errors
+            if (lowerLine.includes('error:') ||
+                lowerLine.includes('failed') ||
+                lowerLine.includes('panic') ||
+                lowerLine.includes('no sign with key') ||
+                lowerLine.includes('fatal:')) {
+              sendLog(`❌ ${line.trim()}`, 'error')
+            }
+            // Success indicators
+            else if (lowerLine.includes('finished') && lowerLine.includes('release') ||
+                     lowerLine.includes('successfully') ||
+                     lowerLine.includes('complete')) {
+              sendLog(`✅ ${line.trim()}`, 'success')
+            }
+            // Info/warnings (most stderr output)
+            else {
+              sendLog(`ℹ️ ${line.trim()}`, 'info')
+            }
           }
         })
       }
+    })
 
-      sendLog(`❌ Deployment failed: ${error.message}`, 'error')
-      controller.enqueue(`data: ${JSON.stringify({
-        type: 'error',
-        message: `Docker process failed: ${error.message}`
-      })}\n\n`)
-    }
+    // Handle process completion
+    dockerProcess.on('close', async (code) => {
+      if (processCompleted) return
+      processCompleted = true
+
+      // Cleanup temporary directory
+      if (tempDir) {
+        try {
+          await rm(tempDir, { recursive: true, force: true })
+          sendLog(`🧹 Cleaned up temporary workspace`)
+        } catch (err) {
+          sendLog(`⚠️ Failed to cleanup temp dir: ${err instanceof Error ? err.message : String(err)}`)
+        }
+      }
+
+      if (code === 0) {
+        sendLog('🎉 Deployment completed successfully!', 'success')
+        if (!isControllerClosed) {
+          controller.enqueue(`data: ${JSON.stringify({
+            type: 'complete',
+            network,
+            message: 'Deployment completed successfully!'
+          })}\n\n`)
+        }
+      } else {
+        sendLog(`❌ Deployment failed with exit code: ${code}`, 'error')
+        if (!isControllerClosed) {
+          controller.enqueue(`data: ${JSON.stringify({
+            type: 'error',
+            message: `Docker process exited with code ${code}`
+          })}\n\n`)
+        }
+      }
+
+      if (!isControllerClosed) {
+        isControllerClosed = true
+        controller.close()
+      }
+    })
+
+    // Handle process errors
+    dockerProcess.on('error', async (error) => {
+      if (processCompleted) return
+      processCompleted = true
+
+      // Cleanup temporary directory
+      if (tempDir) {
+        try {
+          await rm(tempDir, { recursive: true, force: true })
+          sendLog(`🧹 Cleaned up temporary workspace`)
+        } catch (err) {
+          console.error('Failed to cleanup temp dir:', err)
+        }
+      }
+
+      sendLog(`❌ Docker process error: ${error.message}`, 'error')
+      if (!isControllerClosed) {
+        controller.enqueue(`data: ${JSON.stringify({
+          type: 'error',
+          message: `Docker error: ${error.message}`
+        })}\n\n`)
+      }
+
+      if (!isControllerClosed) {
+        isControllerClosed = true
+        controller.close()
+      }
+    })
 
   } catch (error) {
     sendLog(`❌ Failed to start deployment: ${error instanceof Error ? error.message : String(error)}`, 'error')
-    controller.enqueue(`data: ${JSON.stringify({
-      type: 'error',
-      message: error instanceof Error ? error.message : String(error)
-    })}\n\n`)
+    if (!isControllerClosed) {
+      controller.enqueue(`data: ${JSON.stringify({
+        type: 'error',
+        message: error instanceof Error ? error.message : String(error)
+      })}\n\n`)
+    }
   } finally {
-    // Cleanup temporary directory
+    // Cleanup temporary directory if not already done
     if (tempDir) {
       try {
         await rm(tempDir, { recursive: true, force: true })
@@ -203,6 +291,11 @@ async function deployContract(
         sendLog(`⚠️ Failed to cleanup temp dir: ${err instanceof Error ? err.message : String(err)}`)
       }
     }
-    controller.close()
+
+    // Only close if not already closed
+    if (!isControllerClosed) {
+      isControllerClosed = true
+      controller.close()
+    }
   }
 }

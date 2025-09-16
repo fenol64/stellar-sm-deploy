@@ -21,6 +21,7 @@ export const deploy = (
     --wasm ${path} \
     --source-account ${account} \
     --network ${network} \
-    --alias ${alias}
+    --alias ${alias} \
+    --secret-key "$STELLAR_SECRET_KEY" \
     ${params}`
 }

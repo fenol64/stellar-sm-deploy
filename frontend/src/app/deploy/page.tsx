@@ -54,22 +54,29 @@ export default function DeployPage() {
         throw new Error('No response body')
       }
 
+      let buffer = ''
+
       while (true) {
         const { done, value } = await reader.read()
 
         if (done) break
 
         const chunk = decoder.decode(value, { stream: true })
-        const lines = chunk.split('\n')
+        buffer += chunk
+
+        // Process complete lines
+        const lines = buffer.split('\n')
+        buffer = lines.pop() || '' // Keep incomplete line in buffer
 
         for (const line of lines) {
-          if (line.startsWith('data: ')) {
+          if (line.startsWith('data: ') && line.trim() !== 'data: ') {
             try {
               const data = JSON.parse(line.slice(6))
 
               if (data.type === 'error') {
                 setLogs(prev => [...prev, `❌ ${data.message}`])
                 setDeployStatus('error')
+                reader.releaseLock()
                 return
               } else if (data.type === 'complete') {
                 setLogs(prev => [...prev, `🎉 ${data.message}`])
@@ -77,16 +84,32 @@ export default function DeployPage() {
                   setLogs(prev => [...prev, `📄 Contract ID: ${data.contractId}`])
                 }
                 setDeployStatus('success')
+                reader.releaseLock()
                 return
               } else {
                 setLogs(prev => [...prev, data.message])
               }
             } catch (e) {
+              console.warn('Failed to parse JSON:', line)
               // Skip invalid JSON lines
             }
           }
         }
       }
+
+      // Process any remaining buffer
+      if (buffer.startsWith('data: ') && buffer.trim() !== 'data: ') {
+        try {
+          const data = JSON.parse(buffer.slice(6))
+          if (data.message) {
+            setLogs(prev => [...prev, data.message])
+          }
+        } catch (e) {
+          // Skip invalid JSON
+        }
+      }
+
+      reader.releaseLock()
 
     } catch (error) {
       console.error('Deployment error:', error)
