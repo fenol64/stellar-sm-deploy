@@ -34,20 +34,27 @@ model User {
 
 // Stellar keypair model
 model StellarKeypair {
-  id           String   @id @default(auto()) @map("_id") @db.ObjectId
-  publicKey    String   @unique
-  secretKey    String   // Encrypted in production
-  network      String   @default("testnet") // testnet or mainnet
-  funded       Boolean  @default(false)
-  createdAt    DateTime @default(now())
-  updatedAt    DateTime @updatedAt
+  id                String   @id @default(auto()) @map("_id") @db.ObjectId
+
+  // Testnet keypair
+  testnetPublicKey  String?
+  testnetSecretKey  String?   // Encrypted in production
+  testnetFunded     Boolean  @default(false)
+
+  // Mainnet keypair
+  mainnetPublicKey  String?
+  mainnetSecretKey  String?   // Encrypted in production
+  mainnetFunded     Boolean  @default(false)
+
+  createdAt         DateTime @default(now())
+  updatedAt         DateTime @updatedAt
 
   // User relationship
-  userId       String   @db.ObjectId
-  user         User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  userId            String   @db.ObjectId
+  user              User     @relation(fields: [userId], references: [id], onDelete: Cascade)
 
   // Relationships
-  deployments  Deployment[]
+  deployments       Deployment[]
 
   @@map("stellar_keypairs")
 }

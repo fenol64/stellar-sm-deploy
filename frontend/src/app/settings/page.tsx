@@ -2,7 +2,7 @@
 
 import { useSession } from "next-auth/react"
 import LoginButton from "../../components/LoginButton"
-import StellarWallet from "../../components/StellarWallet"
+import StellarKeypairManager from "../../components/StellarKeypairManager"
 import Link from "next/link"
 
 export default function SettingsPage() {
@@ -86,8 +86,8 @@ export default function SettingsPage() {
                 </div>
               </div>
 
-              {/* Stellar Wallet Section */}
-              <StellarWallet />
+              {/* Stellar Keypair Manager */}
+              <StellarKeypairManager />
 
               {/* Deployment Preferences */}
               <div className="bg-gray-800/30 backdrop-blur-sm border border-gray-700/50 rounded-lg p-6">
