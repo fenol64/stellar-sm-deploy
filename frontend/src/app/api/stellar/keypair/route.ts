@@ -96,7 +96,6 @@ export async function GET(request: NextRequest) {
       )
     }
 
-    // Return public information only
     return NextResponse.json({
       publicKey: userKeypair.publicKey,
       githubUsername: userKeypair.githubUsername,
