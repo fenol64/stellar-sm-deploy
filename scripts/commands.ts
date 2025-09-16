@@ -22,6 +22,5 @@ export const deploy = (
     --source-account ${account} \
     --network ${network} \
     --alias ${alias} \
-    --secret-key "$STELLAR_SECRET_KEY" \
     ${params}`
 }
