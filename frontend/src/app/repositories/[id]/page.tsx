@@ -41,6 +41,11 @@ export default function RepositoryPage() {
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState('')
 
+  // State for SDK Generation
+  const [isGeneratingSdk, setIsGeneratingSdk] = useState(false)
+  const [sdkLogs, setSdkLogs] = useState<string[]>([])
+  const [sdkError, setSdkError] = useState('')
+
   const repositoryId = params.id as string
 
   useEffect(() => {
@@ -75,6 +80,88 @@ export default function RepositoryPage() {
       router.push(`/deploy?repo=${encodeURIComponent(repository.cloneUrl)}&name=${encodeURIComponent(repository.name)}`)
     }
   }
+
+  const downloadSdk = (base64: string, filename: string) => {
+    const link = document.createElement('a');
+    link.href = `data:application/zip;base64,${base64}`;
+    link.download = filename;
+    document.body.appendChild(link);
+    link.click();
+    document.body.removeChild(link);
+  };
+
+  const handleGenerateSdk = async (deployment: Deployment) => {
+    if (!deployment.contractAddress) {
+      setSdkError('This deployment does not have a contract address.');
+      return;
+    }
+
+    setIsGeneratingSdk(true);
+    setSdkLogs([]);
+    setSdkError('');
+
+    try {
+      const response = await fetch('/api/gensdk', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          contractId: deployment.contractAddress,
+          network: deployment.network,
+        }),
+      });
+
+      if (!response.body) {
+        throw new Error('Response body is empty.');
+      }
+
+      const reader = response.body.getReader();
+      const decoder = new TextDecoder();
+
+      while (true) {
+        const { done, value } = await reader.read();
+        if (done) {
+          setSdkLogs(prev => [...prev, 'Stream finished.']);
+          break;
+        }
+
+        const chunk = decoder.decode(value);
+        const lines = chunk.split('\n\n').filter(line => line.startsWith('data: '));
+
+        for (const line of lines) {
+          const jsonString = line.replace('data: ', '');
+          try {
+            const data = JSON.parse(jsonString);
+
+            if (data.type === 'error') {
+              const finalMessage = `❌ Error: ${data.message}`;
+              setSdkError(finalMessage);
+              setSdkLogs(prev => [...prev, finalMessage]);
+              reader.cancel(); // Stop reading the stream
+              return; // Exit the handler
+            }
+
+            if (data.type === 'complete') {
+              setSdkLogs(prev => [...prev, '✅ SDK Generated! Starting download...']);
+              downloadSdk(data.sdkBase64, `sdk-${deployment.contractAddress?.substring(0, 10)}.zip`);
+              setTimeout(() => {
+                setIsGeneratingSdk(false);
+              }, 3000);
+            } else {
+              setSdkLogs(prev => [...prev, data.message]);
+            }
+          } catch (e) {
+            console.error('Failed to parse SSE chunk:', jsonString);
+            // Also display this parsing error in the modal
+            setSdkLogs(prev => [...prev, `⚠️ Error parsing log line: ${jsonString}`]);
+          }
+        }
+      }
+    } catch (error) {
+      const errorMessage = error instanceof Error ? error.message : 'An unknown error occurred.';
+      setSdkError(errorMessage);
+      setSdkLogs(prev => [...prev, `❌ Error: ${errorMessage}`]);
+    } 
+  };
 
   const getStatusColor = (status: string) => {
     switch (status) {
@@ -280,6 +367,14 @@ export default function RepositoryPage() {
                       >
                         View Details
                       </Link>
+                      {deployment.contractAddress && (
+                        <button
+                          onClick={() => handleGenerateSdk(deployment)}
+                          className="px-3 py-1 bg-green-600 hover:bg-green-700 text-white rounded text-sm transition-colors"
+                        >
+                          Generate SDK
+                        </button>
+                      )}
                     </div>
                   </div>
                 </div>
@@ -287,6 +382,28 @@ export default function RepositoryPage() {
             </div>
           )}
         </div>
+
+        {isGeneratingSdk && (
+          <div className="fixed inset-0 bg-black/50 backdrop-blur-sm flex items-center justify-center z-50">
+              <div className="bg-white rounded-lg shadow-2xl p-6 w-full max-w-2xl max-h-[80vh] flex flex-col">
+                  <h3 className="text-xl font-semibold text-slate-900 mb-4">Generating SDK...</h3>
+                  <div className="bg-slate-900 text-white font-mono text-sm rounded p-4 overflow-y-auto flex-grow">
+                      {sdkLogs.map((log, index) => (
+                          <p key={index} className="whitespace-pre-wrap break-words">{`> ${log}`}</p>
+                      ))}
+                      {sdkError && <p className="text-red-400 mt-2">{`Error: ${sdkError}`}</p>}
+                  </div>
+                  <button
+                      onClick={() => {
+                          setIsGeneratingSdk(false);
+                      }}
+                      className="mt-4 px-4 py-2 bg-slate-200 hover:bg-slate-300 text-slate-900 rounded-lg transition-colors self-end"
+                  >
+                      Close
+                  </button>
+              </div>
+          </div>
+        )}
       </main>
     </div>
   )
