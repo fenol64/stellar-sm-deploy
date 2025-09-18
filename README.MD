@@ -1,3 +1,5 @@
+Open [http://stellar-sm.fenol64.com.br](http://stellar-sm.fenol64.com.br) with your browser to see the result. is not with ssl spo u need to click to continue to the website
+
 # Frontend - Stellar Smart Contract Deployer
 
 This is a [Next.js](https://nextjs.org) application that provides a web interface for deploying Stellar smart contracts from GitHub repositories. It handles user authentication, Stellar keypair management, and the deployment process.
@@ -71,7 +73,7 @@ Start the Next.js development server:
 pnpm dev
 ```
 
-Open [http://stellar-sm.fenol64.com.br](http://stellar-sm.fenol64.com.br) with your browser to see the result.
+
 
 ## 📂 Frontend Project settings
 
