@@ -4,6 +4,7 @@ import { useSearchParams, useRouter } from "next/navigation"
 import { useState, useEffect, useRef, Suspense } from "react"
 import { useSession } from "next-auth/react"
 import Link from "next/link"
+import { getServerSession } from "next-auth"
 
 function DeployPageContent() {
   const { data: session } = useSession()
@@ -36,6 +37,7 @@ function DeployPageContent() {
     setDeployStatus('deploying')
     setLogs([])
 
+    console.log('Starting deployment for:', { repo, name, template })
     try {
       const response = await fetch('/api/deploy', {
         method: 'POST',
@@ -379,8 +381,8 @@ function DeployPageContent() {
                   <span className="text-gray-500">[{new Date().toLocaleTimeString()}]</span>
                   <div className="flex space-x-1">
                     <div className="w-1 h-1 bg-blue-400 rounded-full animate-bounce"></div>
-                    <div className="w-1 h-1 bg-blue-400 rounded-full animate-bounce" style={{animationDelay: '0.1s'}}></div>
-                    <div className="w-1 h-1 bg-blue-400 rounded-full animate-bounce" style={{animationDelay: '0.2s'}}></div>
+                    <div className="w-1 h-1 bg-blue-400 rounded-full animate-bounce" style={{ animationDelay: '0.1s' }}></div>
+                    <div className="w-1 h-1 bg-blue-400 rounded-full animate-bounce" style={{ animationDelay: '0.2s' }}></div>
                   </div>
                 </div>
               )}
