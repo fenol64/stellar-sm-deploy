@@ -14,7 +14,13 @@ interface Deployment {
   deployedAt: string | null
   stellarKeypair: {
     testnetPublicKey: string
-  }
+  },
+  lastCommit: {
+    sha: string
+    message: string,
+    author: string,
+    url: string
+  } | null
 }
 
 interface Repository {
@@ -160,7 +166,7 @@ export default function RepositoryPage() {
       const errorMessage = error instanceof Error ? error.message : 'An unknown error occurred.';
       setSdkError(errorMessage);
       setSdkLogs(prev => [...prev, `❌ Error: ${errorMessage}`]);
-    } 
+    }
   };
 
   const getStatusColor = (status: string) => {
@@ -358,6 +364,32 @@ export default function RepositoryPage() {
                           <p className="text-slate-900 font-mono text-xs">{deployment.stellarKeypair.testnetPublicKey}</p>
                         </div>
                       </div>
+
+                      {deployment.lastCommit && (
+                        <div className="mt-3 text-sm">
+                          <div className="mb-1">
+                            <span className="text-slate-600">Author:</span>
+                            <span className="ml-2 text-slate-900">{deployment.lastCommit.author}</span>
+                          </div>
+                          <div className="grid grid-cols-2 gap-4">
+                            <div className="flex items-center gap-2">
+                              <span className="text-slate-600">SHA:</span>
+                              <a
+                                href={deployment.lastCommit.url}
+                                target="_blank"
+                                rel="noopener noreferrer"
+                                className="font-mono text-blue-600 hover:text-blue-800 hover:underline"
+                              >
+                                {deployment.lastCommit.sha.substring(0, 7)}
+                              </a>
+                            </div>
+                            <div>
+                              <span className="text-slate-600">Message:</span>
+                              <span className="ml-2 text-slate-900">{deployment.lastCommit.message}</span>
+                            </div>
+                          </div>
+                        </div>
+                      )}
                     </div>
 
                     <div className="flex gap-2">
@@ -385,23 +417,23 @@ export default function RepositoryPage() {
 
         {isGeneratingSdk && (
           <div className="fixed inset-0 bg-black/50 backdrop-blur-sm flex items-center justify-center z-50">
-              <div className="bg-white rounded-lg shadow-2xl p-6 w-full max-w-2xl max-h-[80vh] flex flex-col">
-                  <h3 className="text-xl font-semibold text-slate-900 mb-4">Generating SDK...</h3>
-                  <div className="bg-slate-900 text-white font-mono text-sm rounded p-4 overflow-y-auto flex-grow">
-                      {sdkLogs.map((log, index) => (
-                          <p key={index} className="whitespace-pre-wrap break-words">{`> ${log}`}</p>
-                      ))}
-                      {sdkError && <p className="text-red-400 mt-2">{`Error: ${sdkError}`}</p>}
-                  </div>
-                  <button
-                      onClick={() => {
-                          setIsGeneratingSdk(false);
-                      }}
-                      className="mt-4 px-4 py-2 bg-slate-200 hover:bg-slate-300 text-slate-900 rounded-lg transition-colors self-end"
-                  >
-                      Close
-                  </button>
+            <div className="bg-white rounded-lg shadow-2xl p-6 w-full max-w-2xl max-h-[80vh] flex flex-col">
+              <h3 className="text-xl font-semibold text-slate-900 mb-4">Generating SDK...</h3>
+              <div className="bg-slate-900 text-white font-mono text-sm rounded p-4 overflow-y-auto flex-grow">
+                {sdkLogs.map((log, index) => (
+                  <p key={index} className="whitespace-pre-wrap break-words">{`> ${log}`}</p>
+                ))}
+                {sdkError && <p className="text-red-400 mt-2">{`Error: ${sdkError}`}</p>}
               </div>
+              <button
+                onClick={() => {
+                  setIsGeneratingSdk(false);
+                }}
+                className="mt-4 px-4 py-2 bg-slate-200 hover:bg-slate-300 text-slate-900 rounded-lg transition-colors self-end"
+              >
+                Close
+              </button>
+            </div>
           </div>
         )}
       </main>
