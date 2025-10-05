@@ -16,6 +16,12 @@ interface RecentDeployment {
     description: string | null
     htmlUrl: string
   }
+  lastCommit?: {
+    sha: string
+    message: string
+    author: string
+    url: string
+  }
 }
 
 export default function RecentDeploymentsList() {
@@ -176,10 +182,40 @@ export default function RecentDeploymentsList() {
                       <span className={`text-xs ${getStatusColor(deployment.status)} capitalize`}>
                         {deployment.status}
                       </span>
+                      <span className="text-xs text-slate-600 capitalize">
+                        {deployment.network}
+                      </span>
                     </div>
-                    <p className="text-sm text-slate-600 mb-2">
-                      Network: {deployment.network}
-                    </p>
+
+                    {deployment.lastCommit && (
+                      <div className="mb-2">
+                        <div className="text-xs mb-1">
+                          <span className="text-slate-600">Author:</span>
+                          <span className="ml-1 text-slate-900">{deployment.lastCommit.author}</span>
+                        </div>
+                        <div className="grid grid-cols-2 gap-2 text-xs">
+                          <div>
+                            <span className="text-slate-600">SHA:</span>
+                            <a
+                              href={deployment.lastCommit.url}
+                              target="_blank"
+                              rel="noopener noreferrer"
+                              className="ml-1 font-mono text-blue-600 hover:text-blue-800 hover:underline"
+                              onClick={(e) => e.stopPropagation()}
+                            >
+                              {deployment.lastCommit.sha.substring(0, 7)}
+                            </a>
+                          </div>
+                          <div>
+                            <span className="text-slate-600">Message:</span>
+                            <span className="ml-1 text-slate-900 truncate">
+                              {deployment.lastCommit.message}
+                            </span>
+                          </div>
+                        </div>
+                      </div>
+                    )}
+
                     {deployment.contractAddress && (
                       <div className="flex items-center gap-2">
                         <code className="text-xs bg-slate-100 px-2 py-1 rounded text-green-700 font-mono">

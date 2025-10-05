@@ -6,6 +6,7 @@ import { spawn } from 'child_process'
 import { mkdtemp, rm } from 'fs/promises'
 import { join } from 'path'
 import { tmpdir } from 'os'
+import { Octokit } from '@octokit/rest'
 
 export async function POST(request: NextRequest) {
   try {
@@ -19,6 +20,22 @@ export async function POST(request: NextRequest) {
     }
 
     const { repo, name, template, network = 'testnet' } = await request.json()
+    console.log('Deployment request received:', { repo, name, template, network })
+    console.log('User Token:', session.accessToken)
+    const octokit = new Octokit({ auth: session.accessToken });
+
+    const ownerRepoMatch = repo ? repo.match(/github\.com\/([^\/]+)\/([^\/]+)(\.git)?$/) : null
+    const [, owner, repoName] = ownerRepoMatch
+    console.log('Extracted GitHub repository information:', { owner, repoName })
+    const { data } = await octokit.repos.get({ owner, repo: repoName });
+    const branch = data.default_branch || 'main';
+    const lastCommit = await octokit.repos.getCommit({ owner, repo: repoName, ref: branch });
+    const commitInfo = {
+      sha: lastCommit.data.sha,
+      message: lastCommit.data.commit.message,
+      author: lastCommit.data.commit.author.name,
+      url: lastCommit.data.html_url
+    }
 
     if (!repo) {
       return NextResponse.json(
@@ -64,7 +81,7 @@ export async function POST(request: NextRequest) {
     // SSE streaming response
     const stream = new ReadableStream({
       start(controller) {
-        deployContract(controller, repo, account, secretKey, network, name || 'contract', user, keypair)
+        deployContract(controller, repo, account, secretKey, network, name || 'contract', user, keypair, commitInfo)
           .catch(error => {
             controller.enqueue(`data: ${JSON.stringify({
               type: 'error',
@@ -103,7 +120,8 @@ async function deployContract(
   network: string,
   contractName: string,
   user: any,
-  keypair: any
+  keypair: any,
+  commit: { sha: string; message: string; author: string; url: string } | null = null
 ) {
   let tempDir: string | null = null
   let isControllerClosed = false
@@ -206,16 +224,16 @@ async function deployContract(
 
             // True errors
             if (lowerLine.includes('error:') ||
-                lowerLine.includes('failed') ||
-                lowerLine.includes('panic') ||
-                lowerLine.includes('no sign with key') ||
-                lowerLine.includes('fatal:')) {
+              lowerLine.includes('failed') ||
+              lowerLine.includes('panic') ||
+              lowerLine.includes('no sign with key') ||
+              lowerLine.includes('fatal:')) {
               sendLog(`❌ ${line.trim()}`, 'info')
             }
             // Success indicators
             else if (lowerLine.includes('finished') && lowerLine.includes('release') ||
-                     lowerLine.includes('successfully') ||
-                     lowerLine.includes('complete')) {
+              lowerLine.includes('successfully') ||
+              lowerLine.includes('complete')) {
               sendLog(`✅ ${line.trim()}`, 'success')
             }
             // Info/warnings (most stderr output)
@@ -279,13 +297,19 @@ async function deployContract(
             data: {
               contractAddress: contractAddress || null,
               network: network,
+              lastCommit: commit ? {
+                sha: commit.sha,
+                message: commit.message,
+                author: commit.author,
+                url: commit.url
+              } : undefined,
               status: 'DEPLOYED',
               buildLogs: buildLogs || null,
               deployLogs: deployLogs || null,
               userId: user.id,
               repositoryId: repository.id,
               stellarKeypairId: keypair.id,
-              deployedAt: new Date()
+              deployedAt: new Date(),
             }
           })
 

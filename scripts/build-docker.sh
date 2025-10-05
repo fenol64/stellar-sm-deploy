@@ -7,8 +7,7 @@ set -e
 echo "🐳 Building Stellar Smart Contract Deployer Docker image..."
 
 # Build the Docker image from the scripts directory
-cd /home/fnascime/stellar-sm-deploy/scripts
-docker build -t stellar-deployer:latest .
+docker build  -f Dockerfile.deploy -t stellar-deployer:latest .
 
 echo "✅ Docker image built successfully!"
 echo ""
